@@ -1,0 +1,21 @@
+
+2025-11-29 18:05:01 Info Kullanıcı onayı script çalıştırılırken verilen parametre ile baypas edildi.
+2025-11-29 18:05:01 Info Protokol[Clients] yapılandırması başlatıldı.
+2025-11-29 18:05:01 Info Protokol[Clients] yapılandırması tamamlandı.
+
+2025-11-29 18:05:01 Info Protokol[Servers] yapılandırması başlatıldı.
+2025-11-29 18:05:01 Info Protokol[Servers] yapılandırması tamamlandı.
+
+2025-11-29 18:05:01 Info Şifreleme Algoritmaları yapılandırması başladı.
+2025-11-29 18:05:01 Info Şifreleme algoritmaları yapılandırması tamamlandı.
+
+2025-11-29 18:05:01 Info Hash algoritmaları yapılandırması başladı.
+2025-11-29 18:05:01 Info Hash algoritmaları yapılandırması tamamlandı.
+
+2025-11-29 18:05:01 Info TLS Anahtar değişim algoritmaları yapılandırması başladı.
+2025-11-29 18:05:01 Info TLS Anahtar değişim algoritmaları yapılandırması tamamlandı.
+
+2025-11-29 18:05:01 Info Cipher Suites yapılandırması başladı.
+2025-11-29 18:05:01 Info Profil ECC Curves kullanılıyor: 3 eğri
+2025-11-29 18:05:01 Info Script sonlandırıldı.
+2025-11-29 18:05:01 Info Değişkenler temizleniyor
