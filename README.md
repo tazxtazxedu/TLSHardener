@@ -191,6 +191,48 @@ Rollback işlemi sırasında:
 - Seçilen yedek grubundaki tüm dosyalar birlikte yüklenir
 - Yedek yoksa Windows varsayılanlarına dönme seçeneği sunulur
 
+### 🌐 Uzak Sunucu Desteği
+
+Birden fazla sunucuyu tek komutla yapılandırın:
+
+```powershell
+# Tek sunucu
+.\TLSHardener.ps1 -ComputerName "Server01" -Profile recommended
+
+# Birden fazla sunucu
+.\TLSHardener.ps1 -ComputerName "Server01","Server02","Server03" -Profile strict
+
+# Kimlik bilgisi ile
+.\TLSHardener.ps1 -ComputerName "Server01" -Credential (Get-Credential)
+
+# Dry-Run ile önizleme
+.\TLSHardener.ps1 -ComputerName "Server01","Server02" -WhatIf
+
+# Strong Crypto ile
+.\TLSHardener.ps1 -ComputerName "Server01" -EnableStrongCrypto -BypassConfirmation
+```
+
+#### Ön Gereksinimler
+
+Uzak sunucu desteği için PowerShell Remoting (WinRM) gereklidir:
+
+```powershell
+# Hedef sunucularda WinRM'i etkinleştirin
+Enable-PSRemoting -Force
+
+# Güvenlik duvarı kuralını kontrol edin
+Get-NetFirewallRule -Name "WINRM-HTTP-In-TCP" | Enable-NetFirewallRule
+
+# Trusted Hosts ekleyin (gerekirse)
+Set-Item WSMan:\localhost\Client\TrustedHosts -Value "Server01,Server02"
+```
+
+#### Çıktı
+
+- Bağlantı testi ve durum raporu
+- Her sunucu için ayrıntılı ilerleme
+- CSV formatında sonuç raporu (`.\reports\TLSHardener-Remote_*.csv`)
+
 ### 📋 Compliance Raporu (Uyumluluk Kontrolü)
 
 Güvenlik standartlarına uyumluluğu kontrol edin:

@@ -36,6 +36,12 @@ Rollback için kullanılacak belirli bir yedek dosyası
 .PARAMETER ToDefaults
 Rollback sırasında yedek yerine Windows varsayılanlarına döner
 
+.PARAMETER ComputerName
+Uzak sunucu(lar) üzerinde çalıştırır. PowerShell Remoting gerektirir.
+
+.PARAMETER Credential
+Uzak sunuculara bağlanmak için kullanılacak kimlik bilgisi
+
 .EXAMPLE
 .\TLSHardener.ps1
 Standart çalıştırma - kullanıcı onayı ister
@@ -68,9 +74,17 @@ Belirtilen yedek dosyasına geri döner
 .\TLSHardener.ps1 -Rollback -ToDefaults
 Windows varsayılan ayarlarına döner (Clean)
 
+.EXAMPLE
+.\TLSHardener.ps1 -ComputerName "Server01","Server02" -Profile recommended
+Birden fazla uzak sunucuda yapılandırma uygular
+
+.EXAMPLE
+.\TLSHardener.ps1 -ComputerName "Server01" -Credential (Get-Credential)
+Belirtilen kimlik bilgileri ile uzak sunucuda çalıştırır
+
 .NOTES
 Proje: TLSHardener
-Versiyon: 3.3
+Versiyon: 3.4
 Tarih: 2025
 #>
 #Confirmation gerektiren işlemleri atlamak için scripte parametre ekler
@@ -82,12 +96,413 @@ param (
     [string]$BackupFile = "",
     [switch]$ToDefaults,
     [ValidateSet("strict", "recommended", "compatible", "custom")]
-    [string]$Profile = "recommended"
+    [string]$Profile = "recommended",
+    [string[]]$ComputerName,
+    [System.Management.Automation.PSCredential]$Credential
 )
 
 # Global değişkenler
 $script:DryRun = $WhatIf
 $script:ActiveProfile = $null
+$script:IsRemoteSession = $false
+
+# ============================================================================
+# UZAK SUNUCU FONKSİYONLARI
+# ============================================================================
+
+function Test-RemoteConnection {
+    param (
+        [string]$Computer,
+        [System.Management.Automation.PSCredential]$Cred
+    )
+    
+    try {
+        $params = @{
+            ComputerName = $Computer
+            Count = 1
+            Quiet = $true
+            ErrorAction = 'Stop'
+        }
+        
+        if (-not (Test-Connection @params)) {
+            return @{ Success = $false; Error = "Ping başarısız" }
+        }
+        
+        # WinRM bağlantısını test et
+        $sessionParams = @{
+            ComputerName = $Computer
+            ErrorAction = 'Stop'
+        }
+        if ($Cred) { $sessionParams.Credential = $Cred }
+        
+        $session = New-PSSession @sessionParams
+        Remove-PSSession $session
+        
+        return @{ Success = $true; Error = $null }
+    }
+    catch {
+        return @{ Success = $false; Error = $_.Exception.Message }
+    }
+}
+
+function Invoke-RemoteConfiguration {
+    param (
+        [string[]]$Computers,
+        [System.Management.Automation.PSCredential]$Cred,
+        [string]$SelectedProfile,
+        [bool]$IsDryRun,
+        [bool]$StrongCrypto
+    )
+    
+    $scriptPath = $PSScriptRoot
+    $results = @()
+    
+    Write-Host "`n" -NoNewline
+    Write-Host "╔════════════════════════════════════════════════════════════════════╗" -ForegroundColor Cyan
+    Write-Host "║                    UZAK SUNUCU YAPILANDIRMASI                      ║" -ForegroundColor Cyan
+    Write-Host "╚════════════════════════════════════════════════════════════════════╝" -ForegroundColor Cyan
+    Write-Host ""
+    
+    # Bağlantıları test et
+    Write-Host "  🔍 Sunucu bağlantıları kontrol ediliyor..." -ForegroundColor Yellow
+    Write-Host ""
+    
+    $validComputers = @()
+    foreach ($computer in $Computers) {
+        Write-Host "    [$computer] " -NoNewline
+        $testResult = Test-RemoteConnection -Computer $computer -Cred $Cred
+        
+        if ($testResult.Success) {
+            Write-Host "✅ Bağlantı başarılı" -ForegroundColor Green
+            $validComputers += $computer
+        } else {
+            Write-Host "❌ Bağlantı başarısız: $($testResult.Error)" -ForegroundColor Red
+            $results += [PSCustomObject]@{
+                ComputerName = $computer
+                Status = "Bağlantı Hatası"
+                Message = $testResult.Error
+                Success = $false
+            }
+        }
+    }
+    
+    if ($validComputers.Count -eq 0) {
+        Write-Host "`n  ❌ Bağlanılabilecek sunucu bulunamadı!" -ForegroundColor Red
+        return $results
+    }
+    
+    Write-Host "`n  📦 Profil dosyası hazırlanıyor..." -ForegroundColor Yellow
+    
+    # Profil dosyasını oku
+    $profilePath = Join-Path $scriptPath "config\$SelectedProfile.json"
+    if (-not (Test-Path $profilePath)) {
+        $profilePath = Join-Path $scriptPath "config\recommended.json"
+    }
+    $profileContent = Get-Content $profilePath -Raw
+    
+    # Script bloğu oluştur
+    $remoteScriptBlock = {
+        param($ProfileJson, $DryRun, $EnableStrong, $ProfileName)
+        
+        $ErrorActionPreference = 'Stop'
+        $results = @{
+            Success = $true
+            Messages = @()
+            Errors = @()
+        }
+        
+        try {
+            # Profili parse et
+            $profile = $ProfileJson | ConvertFrom-Json
+            
+            $results.Messages += "Profil yüklendi: $ProfileName"
+            
+            if ($DryRun) {
+                $results.Messages += "[DRY-RUN] Değişiklikler simüle edilecek"
+            } else {
+                # Registry yedekleme
+                $backupFolder = "C:\TLSHardener-Backups"
+                if (-not (Test-Path $backupFolder)) {
+                    New-Item -Path $backupFolder -ItemType Directory -Force | Out-Null
+                }
+                
+                $timestamp = Get-Date -Format "yyyyMMdd_HHmmss"
+                $backupFile = Join-Path $backupFolder "SCHANNEL_$timestamp.reg"
+                
+                $regExport = reg export "HKLM\SYSTEM\CurrentControlSet\Control\SecurityProviders\SCHANNEL" $backupFile /y 2>&1
+                if ($LASTEXITCODE -eq 0) {
+                    $results.Messages += "Yedek alındı: $backupFile"
+                } else {
+                    $results.Messages += "Yedek alınamadı (devam ediliyor)"
+                }
+            }
+            
+            # SCHANNEL Protocols
+            $protocols = @(
+                @{ Name = "SSL 2.0"; Enabled = $false },
+                @{ Name = "SSL 3.0"; Enabled = $false },
+                @{ Name = "TLS 1.0"; Enabled = $profile.protocols.tls10 },
+                @{ Name = "TLS 1.1"; Enabled = $profile.protocols.tls11 },
+                @{ Name = "TLS 1.2"; Enabled = $profile.protocols.tls12 },
+                @{ Name = "TLS 1.3"; Enabled = $profile.protocols.tls13 }
+            )
+            
+            foreach ($proto in $protocols) {
+                foreach ($type in @("Server", "Client")) {
+                    $regPath = "HKLM:\SYSTEM\CurrentControlSet\Control\SecurityProviders\SCHANNEL\Protocols\$($proto.Name)\$type"
+                    
+                    if ($DryRun) {
+                        $results.Messages += "[DRY-RUN] $($proto.Name) $type = $($proto.Enabled)"
+                    } else {
+                        if (-not (Test-Path $regPath)) {
+                            New-Item -Path $regPath -Force | Out-Null
+                        }
+                        
+                        $enabledValue = if ($proto.Enabled) { 1 } else { 0 }
+                        $disabledDefault = if ($proto.Enabled) { 0 } else { 1 }
+                        
+                        Set-ItemProperty -Path $regPath -Name "Enabled" -Value $enabledValue -Type DWord -Force
+                        Set-ItemProperty -Path $regPath -Name "DisabledByDefault" -Value $disabledDefault -Type DWord -Force
+                        
+                        $results.Messages += "$($proto.Name) $type = $($proto.Enabled)"
+                    }
+                }
+            }
+            
+            # Hash Algorithms
+            $hashes = @(
+                @{ Name = "MD5"; Enabled = $false },
+                @{ Name = "SHA"; Enabled = $false },
+                @{ Name = "SHA256"; Enabled = $true },
+                @{ Name = "SHA384"; Enabled = $true },
+                @{ Name = "SHA512"; Enabled = $true }
+            )
+            
+            foreach ($hash in $hashes) {
+                $regPath = "HKLM:\SYSTEM\CurrentControlSet\Control\SecurityProviders\SCHANNEL\Hashes\$($hash.Name)"
+                
+                if (-not $DryRun) {
+                    if (-not (Test-Path $regPath)) {
+                        New-Item -Path $regPath -Force | Out-Null
+                    }
+                    $value = if ($hash.Enabled) { 0xFFFFFFFF } else { 0 }
+                    Set-ItemProperty -Path $regPath -Name "Enabled" -Value $value -Type DWord -Force
+                }
+                $results.Messages += "Hash $($hash.Name) = $($hash.Enabled)"
+            }
+            
+            # Cipher Algorithms
+            $ciphers = @(
+                @{ Name = "AES 128/128"; Enabled = $true },
+                @{ Name = "AES 256/256"; Enabled = $true },
+                @{ Name = "Triple DES 168"; Enabled = $false },
+                @{ Name = "RC4 128/128"; Enabled = $false },
+                @{ Name = "RC4 64/128"; Enabled = $false },
+                @{ Name = "RC4 56/128"; Enabled = $false },
+                @{ Name = "RC4 40/128"; Enabled = $false },
+                @{ Name = "DES 56/56"; Enabled = $false },
+                @{ Name = "NULL"; Enabled = $false }
+            )
+            
+            foreach ($cipher in $ciphers) {
+                $regPath = "HKLM:\SYSTEM\CurrentControlSet\Control\SecurityProviders\SCHANNEL\Ciphers\$($cipher.Name)"
+                
+                if (-not $DryRun) {
+                    if (-not (Test-Path $regPath)) {
+                        New-Item -Path $regPath -Force | Out-Null
+                    }
+                    $value = if ($cipher.Enabled) { 0xFFFFFFFF } else { 0 }
+                    Set-ItemProperty -Path $regPath -Name "Enabled" -Value $value -Type DWord -Force
+                }
+                $results.Messages += "Cipher $($cipher.Name) = $($cipher.Enabled)"
+            }
+            
+            # Key Exchange - DH Key Size
+            $dhKeySize = $profile.keyExchange.dhMinKeySize
+            $dhRegPath = "HKLM:\SYSTEM\CurrentControlSet\Control\SecurityProviders\SCHANNEL\KeyExchangeAlgorithms\Diffie-Hellman"
+            
+            if (-not $DryRun) {
+                if (-not (Test-Path $dhRegPath)) {
+                    New-Item -Path $dhRegPath -Force | Out-Null
+                }
+                Set-ItemProperty -Path $dhRegPath -Name "ServerMinKeyBitLength" -Value $dhKeySize -Type DWord -Force
+                Set-ItemProperty -Path $dhRegPath -Name "ClientMinKeyBitLength" -Value $dhKeySize -Type DWord -Force
+            }
+            $results.Messages += "DH Key Size = $dhKeySize bit"
+            
+            # Cipher Suites
+            $cipherSuitesPath = "HKLM:\SOFTWARE\Policies\Microsoft\Cryptography\Configuration\SSL\00010002"
+            $allCiphers = @()
+            
+            if ($profile.cipherSuites.tls13 -and $profile.cipherSuites.tls13.Count -gt 0) {
+                $allCiphers += $profile.cipherSuites.tls13
+            }
+            if ($profile.cipherSuites.tls12 -and $profile.cipherSuites.tls12.Count -gt 0) {
+                $allCiphers += $profile.cipherSuites.tls12
+            }
+            
+            if ($allCiphers.Count -gt 0 -and -not $DryRun) {
+                if (-not (Test-Path $cipherSuitesPath)) {
+                    New-Item -Path $cipherSuitesPath -Force | Out-Null
+                }
+                $cipherString = $allCiphers -join ','
+                Set-ItemProperty -Path $cipherSuitesPath -Name "Functions" -Value $cipherString -Type String -Force
+            }
+            $results.Messages += "Cipher Suites yapılandırıldı ($($allCiphers.Count) cipher)"
+            
+            # Key Exchange Algorithms
+            $keyExchanges = @(
+                @{ Name = "Diffie-Hellman"; Enabled = $true },
+                @{ Name = "ECDH"; Enabled = $true },
+                @{ Name = "PKCS"; Enabled = $true }
+            )
+            
+            foreach ($ke in $keyExchanges) {
+                $regPath = "HKLM:\SYSTEM\CurrentControlSet\Control\SecurityProviders\SCHANNEL\KeyExchangeAlgorithms\$($ke.Name)"
+                
+                if (-not $DryRun) {
+                    if (-not (Test-Path $regPath)) {
+                        New-Item -Path $regPath -Force | Out-Null
+                    }
+                    $value = if ($ke.Enabled) { 0xFFFFFFFF } else { 0 }
+                    Set-ItemProperty -Path $regPath -Name "Enabled" -Value $value -Type DWord -Force
+                }
+                $results.Messages += "KeyExchange $($ke.Name) = $($ke.Enabled)"
+            }
+            
+            # ECC Curves
+            $eccCurvesPath = "HKLM:\SOFTWARE\Policies\Microsoft\Cryptography\Configuration\SSL\00010002"
+            $eccCurves = @("NistP384", "NistP256", "NistP521")
+            
+            if (-not $DryRun) {
+                if (-not (Test-Path $eccCurvesPath)) {
+                    New-Item -Path $eccCurvesPath -Force | Out-Null
+                }
+                $eccString = $eccCurves -join ','
+                Set-ItemProperty -Path $eccCurvesPath -Name "EccCurves" -Value $eccString -Type MultiString -Force
+            }
+            $results.Messages += "ECC Curves yapılandırıldı ($($eccCurves.Count) curve)"
+            
+            # FIPS Policy (disabled by default)
+            $fipsPath = "HKLM:\SYSTEM\CurrentControlSet\Control\Lsa\FipsAlgorithmPolicy"
+            if (-not $DryRun) {
+                if (-not (Test-Path $fipsPath)) {
+                    New-Item -Path $fipsPath -Force | Out-Null
+                }
+                Set-ItemProperty -Path $fipsPath -Name "Enabled" -Value 0 -Type DWord -Force
+            }
+            $results.Messages += "FIPS Policy = Disabled"
+            
+            # Strong Crypto
+            if ($EnableStrong) {
+                $netPaths = @(
+                    "HKLM:\SOFTWARE\Microsoft\.NETFramework\v4.0.30319",
+                    "HKLM:\SOFTWARE\Wow6432Node\Microsoft\.NETFramework\v4.0.30319"
+                )
+                
+                foreach ($netPath in $netPaths) {
+                    if (-not $DryRun) {
+                        if (-not (Test-Path $netPath)) {
+                            New-Item -Path $netPath -Force | Out-Null
+                        }
+                        Set-ItemProperty -Path $netPath -Name "SchUseStrongCrypto" -Value 1 -Type DWord -Force
+                        Set-ItemProperty -Path $netPath -Name "SystemDefaultTlsVersions" -Value 1 -Type DWord -Force
+                    }
+                }
+                $results.Messages += ".NET Strong Crypto etkinleştirildi"
+            }
+            
+            $results.Messages += "Yapılandırma tamamlandı"
+            
+        } catch {
+            $results.Success = $false
+            $results.Errors += $_.Exception.Message
+        }
+        
+        return $results
+    }
+    
+    # Her sunucuda çalıştır
+    Write-Host ""
+    $successCount = 0
+    $failCount = 0
+    
+    foreach ($computer in $validComputers) {
+        Write-Host "  ─────────────────────────────────────────────────────────────" -ForegroundColor Gray
+        Write-Host "  📡 [$computer] Yapılandırılıyor..." -ForegroundColor Cyan
+        
+        try {
+            $sessionParams = @{
+                ComputerName = $computer
+                ErrorAction = 'Stop'
+            }
+            if ($Cred) { $sessionParams.Credential = $Cred }
+            
+            $session = New-PSSession @sessionParams
+            
+            $remoteResult = Invoke-Command -Session $session -ScriptBlock $remoteScriptBlock `
+                -ArgumentList $profileContent, $IsDryRun, $StrongCrypto, $SelectedProfile
+            
+            Remove-PSSession $session
+            
+            if ($remoteResult.Success) {
+                Write-Host "  ✅ [$computer] Başarılı" -ForegroundColor Green
+                foreach ($msg in $remoteResult.Messages | Select-Object -Last 5) {
+                    Write-Host "      $msg" -ForegroundColor Gray
+                }
+                $successCount++
+                
+                $results += [PSCustomObject]@{
+                    ComputerName = $computer
+                    Status = "Başarılı"
+                    Message = "Yapılandırma tamamlandı"
+                    Success = $true
+                }
+            } else {
+                Write-Host "  ❌ [$computer] Hata oluştu" -ForegroundColor Red
+                foreach ($err in $remoteResult.Errors) {
+                    Write-Host "      $err" -ForegroundColor Red
+                }
+                $failCount++
+                
+                $results += [PSCustomObject]@{
+                    ComputerName = $computer
+                    Status = "Hata"
+                    Message = ($remoteResult.Errors -join "; ")
+                    Success = $false
+                }
+            }
+        }
+        catch {
+            Write-Host "  ❌ [$computer] Bağlantı hatası: $_" -ForegroundColor Red
+            $failCount++
+            
+            $results += [PSCustomObject]@{
+                ComputerName = $computer
+                Status = "Bağlantı Hatası"
+                Message = $_.Exception.Message
+                Success = $false
+            }
+        }
+    }
+    
+    # Özet
+    Write-Host ""
+    Write-Host "╔════════════════════════════════════════════════════════════════════╗" -ForegroundColor Cyan
+    Write-Host "║                           ÖZET                                     ║" -ForegroundColor Cyan
+    Write-Host "╚════════════════════════════════════════════════════════════════════╝" -ForegroundColor Cyan
+    Write-Host ""
+    Write-Host "  Toplam Sunucu  : $($Computers.Count)" -ForegroundColor White
+    Write-Host "  Başarılı       : $successCount" -ForegroundColor Green
+    Write-Host "  Başarısız      : $failCount" -ForegroundColor $(if ($failCount -gt 0) { "Red" } else { "Gray" })
+    Write-Host ""
+    
+    if (-not $IsDryRun -and $successCount -gt 0) {
+        Write-Host "  ⚠️  Değişikliklerin etkili olması için sunucuların yeniden başlatılması gerekebilir." -ForegroundColor Yellow
+    }
+    
+    return $results
+}
 
 # ============================================================================
 # ROLLBACK FONKSİYONLARI
@@ -1042,6 +1457,27 @@ function Invoke-SecurityConfiguration {
 # ============================================================================
 # SCRIPT BAŞLATMA
 # ============================================================================
+
+# Uzak sunucu modu mu kontrol et
+if ($ComputerName -and $ComputerName.Count -gt 0) {
+    # Log dosyası
+    $TimeStamp = Get-Date -Format "yyyy_MM_dd_HHmm"
+    [string]$LogFilePath = ".\logs\TLSHardener-Remote_$TimeStamp.log"
+    
+    # Uzak sunucularda çalıştır
+    $remoteResults = Invoke-RemoteConfiguration -Computers $ComputerName -Cred $Credential `
+        -SelectedProfile $Profile -IsDryRun $script:DryRun -StrongCrypto $EnableStrongCrypto
+    
+    # Sonuç raporu oluştur
+    $reportPath = ".\reports\TLSHardener-Remote_$TimeStamp.csv"
+    if (-not (Test-Path ".\reports")) {
+        New-Item -Path ".\reports" -ItemType Directory -Force | Out-Null
+    }
+    $remoteResults | Export-Csv -Path $reportPath -NoTypeInformation -Encoding UTF8
+    Write-Host "  📄 Sonuç raporu: $reportPath" -ForegroundColor Cyan
+    
+    exit 0
+}
 
 # Rollback modu mu kontrol et
 if ($Rollback) {

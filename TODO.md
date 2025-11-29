@@ -70,10 +70,13 @@
     - `.\TLSHardener.ps1 -Rollback -ToDefaults` → Windows varsayılanlarına döner
   - Aynı zaman damgalı tüm yedek dosyalarını gruplar ve birlikte yükler
 
-- [ ] **Uzak Sunucu Desteği** (Karmaşıklık: 🔴 Zor)
-  - `.\TLSHardener.ps1 -ComputerName "Server01","Server02"`
-  - PowerShell Remoting kullan
+- [x] **Uzak Sunucu Desteği** (Karmaşıklık: 🔴 Zor) ✅
+  - `-ComputerName "Server01","Server02"` parametresi
+  - `-Credential` ile kimlik bilgisi desteği
+  - PowerShell Remoting (WinRM) kullanır
   - Toplu sunucu yapılandırması
+  - Bağlantı testi ve hata yönetimi
+  - CSV sonuç raporu
 
 - [x] **Compliance Raporu** (Karmaşıklık: 🔴 Zor) ✅
   - `TLSHardener-Compliance.ps1` scripti oluşturuldu
