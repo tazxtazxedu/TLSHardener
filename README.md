@@ -67,6 +67,14 @@ $PSVersionTable.PSVersion
 
 ---
 
+## ⚠️ ÖNEMLİ UYARI / IMPORTANT WARNING
+
+> **🇹🇷 TÜRKÇE:** Bu scripti çalıştırmadan önce mutlaka sistem yedeği alın! Registry değişiklikleri geri alınamaz sorunlara yol açabilir. Önce `-WhatIf` parametresi ile test edin.
+>
+> **🇬🇧 ENGLISH:** Always create a system backup before running this script! Registry changes can cause irreversible issues. Test with `-WhatIf` parameter first.
+
+---
+
 ## 📥 Kurulum
 
 ### Yöntem 1: Git Clone
