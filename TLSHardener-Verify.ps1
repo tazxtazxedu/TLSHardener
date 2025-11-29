@@ -43,9 +43,19 @@ Compatible profil ile doğrulama yapar ve HTML rapor oluşturur
 Custom profil ayarlarına göre doğrulama yapar
 
 .NOTES
-Proje: TLSHardener
-Versiyon: 1.2
-Tarih: 2025
+    Proje      : TLSHardener
+    Versiyon   : 3.5
+    Yazar      : TLSHardener Contributors
+    Lisans     : MIT
+    Tarih      : 2025
+    
+    Gereksinimler:
+    - Administrator yetkisi
+    - Windows Server 2016+ veya Windows 10+
+    - PowerShell 5.1+
+
+.LINK
+    https://github.com/kullanici/TLSHardener
 #>
 
 param (

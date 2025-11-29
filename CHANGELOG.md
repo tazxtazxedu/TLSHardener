@@ -15,6 +15,37 @@ ve bu proje [Semantic Versioning](https://semver.org/spec/v2.0.0.html) kullanır
 
 ---
 
+## [3.5.0] - 2025-11-29
+
+### ✨ Eklendi
+- **TLSHardener-Report.ps1 yeniden tasarlandı**
+  - Modern ve responsive HTML tasarım
+  - İstatistik kartları (Etkin protokol, cipher, hash sayıları)
+  - Renkli status badge'leri (Etkin/Devre Dışı/Varsayılan)
+  - Tıklanabilir accordion bölümler
+  - Arama ve filtreleme özelliği
+  - Cipher Suite ve ECC Curves görselleştirmesi
+- **Merkezi Hata Yönetimi Sistemi**
+  - `$script:ErrorCodes` hashtable (40+ hata kodu)
+  - `Write-TLSError` fonksiyonu
+  - Kategorize hata kodları: Genel (1000), Profil (1100), Registry (1200), Uzak Sunucu (1300), Dosya (1400), Yapılandırma (1500)
+- **Fonksiyon Birleştirme**
+  - `Set-ProtocolsClients` + `Set-ProtocolsServers` → `Set-Protocols -Type "Both"`
+  - ~40% kod azalması
+- **GitHub Hazırlığı**
+  - LICENSE (MIT)
+  - .gitignore
+  - CONTRIBUTING.md
+  - SECURITY.md
+  - Tüm script'lerde güncel Synopsis
+
+### 🔄 Değişti
+- Tüm script versiyonları 3.5 olarak senkronize edildi
+- `Set-EncryptionAlgorithms`, `Set-HashAlgorithms`, `Set-KeyExchangeAlgorithms` fonksiyonlarına try-catch eklendi
+- README.md version badge 3.5 olarak güncellendi
+
+---
+
 ## [3.4.0] - 2025-11-29
 
 ### ✨ Eklendi

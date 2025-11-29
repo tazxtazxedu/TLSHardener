@@ -1,29 +1,58 @@
 ﻿<#
-.ScriptName: TLSHardener-Clean.ps1
 .SYNOPSIS
-TLSHardener tarafından yapılan yapılandırmaları temizler ve Windows varsayılanlarına döndürür.
+    TLSHardener tarafından yapılan yapılandırmaları temizler ve Windows varsayılanlarına döndürür.
 
 .DESCRIPTION
-Bu script aşağıdaki ayarları temizler:
-- SCHANNEL Ciphers, Hashes, KeyExchangeAlgorithms, Protocols
-- FIPS Algoritma Politikası
-- Cipher Suites sıralaması
-- Elliptic Curve yapılandırması
-- .NET Strong Crypto ayarları
+    Bu script, TLSHardener tarafından yapılan tüm TLS/SSL yapılandırmalarını kaldırır
+    ve sistemi Windows varsayılan ayarlarına geri döndürür.
+    
+    Temizlenen ayarlar:
+    - SCHANNEL Ciphers (AES, DES, RC4, NULL vb.)
+    - SCHANNEL Hashes (MD5, SHA ailesi)
+    - SCHANNEL KeyExchangeAlgorithms (DH, ECDH, PKCS)
+    - SCHANNEL Protocols (SSL 2.0/3.0, TLS 1.0-1.3)
+    - FIPS Algoritma Politikası
+    - Cipher Suite sıralaması
+    - Eliptik Eğri (ECC) yapılandırması
+    - .NET Framework Strong Crypto ayarları
+
+    ⚠️ UYARI: Bu işlem tüm TLS sıkılaştırma ayarlarını kaldırır!
+    Sistem Windows varsayılanlarına dönecektir.
 
 .PARAMETER BypassConfirmation
-Kullanıcı onayını atlar
+    Kullanıcı onayını atlar ve doğrudan temizleme işlemini başlatır.
+    DİKKAT: Bu parametre ile script onay istemeden çalışır!
 
 .EXAMPLE
-.\TLSHardener-Clean.ps1
+    .\TLSHardener-Clean.ps1
+    İnteraktif mod - kullanıcı onayı ister
 
 .EXAMPLE
-.\TLSHardener-Clean.ps1 -BypassConfirmation
+    .\TLSHardener-Clean.ps1 -BypassConfirmation
+    Onay istemeden temizleme yapar (otomasyon için)
+
+.INPUTS
+    Yok
+
+.OUTPUTS
+    Log dosyası: logs/TLSHardener-Clean_YYYY_MM_DD_HHMM.log
 
 .NOTES
-Proje: TLSHardener
-Versiyon: 3.0
-Tarih: 2025
+    Proje      : TLSHardener
+    Versiyon   : 3.5
+    Yazar      : TLSHardener Contributors
+    Lisans     : MIT
+    Tarih      : 2025
+    
+    Gereksinimler:
+    - Administrator yetkisi
+    - Windows Server 2016+ veya Windows 10+
+
+.LINK
+    https://github.com/kullanici/TLSHardener
+
+.LINK
+    .\TLSHardener.ps1 -Rollback -ToDefaults
 #>
 param (
     [switch]$BypassConfirmation

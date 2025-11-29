@@ -39,9 +39,20 @@ HTML rapor oluşturur
 HTML rapor oluşturur ve tarayıcıda açar
 
 .NOTES
-Proje: TLSHardener
-Versiyon: 1.1
-Tarih: 2025
+    Proje      : TLSHardener
+    Versiyon   : 3.5
+    Yazar      : TLSHardener Contributors
+    Lisans     : MIT
+    Tarih      : 2025
+    
+    Desteklenen Standartlar:
+    - PCI-DSS v4.0 (Payment Card Industry)
+    - NIST SP 800-52 Rev.2 (TLS Guidelines)
+    - HIPAA (Healthcare Security)
+    - CIS Benchmark (Windows Hardening)
+
+.LINK
+    https://github.com/kullanici/TLSHardener
 #>
 
 param (

@@ -1,0 +1,39 @@
+﻿# TLSHardener .gitignore
+
+# Log dosyaları
+logs/
+*.log
+
+# Yedek dosyaları
+backups/
+*.reg
+
+# Rapor dosyaları
+reports/
+*.html
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# VS Code
+.vscode/
+*.code-workspace
+
+# PowerShell
+*.ps1xml
+
+# Geçici dosyalar
+*.tmp
+*.temp
+~$*
+
+# Test çıktıları
+TestResults/
+*.trx

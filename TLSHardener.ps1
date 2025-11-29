@@ -83,9 +83,20 @@ Birden fazla uzak sunucuda yapılandırma uygular
 Belirtilen kimlik bilgileri ile uzak sunucuda çalıştırır
 
 .NOTES
-Proje: TLSHardener
-Versiyon: 3.4
-Tarih: 2025
+    Proje      : TLSHardener
+    Versiyon   : 3.5
+    Yazar      : TLSHardener Contributors
+    Lisans     : MIT
+    Tarih      : 2025
+    
+    Gereksinimler:
+    - Windows Server 2016+ veya Windows 10+
+    - PowerShell 5.1+
+    - Administrator yetkisi
+    - TLS 1.3 için: Windows Server 2022+ / Windows 11+
+
+.LINK
+    https://github.com/kullanici/TLSHardener
 #>
 #Confirmation gerektiren işlemleri atlamak için scripte parametre ekler
 param (
