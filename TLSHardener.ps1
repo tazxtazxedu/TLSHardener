@@ -1023,93 +1023,56 @@ function Backup-RegistryKeys {
 }
 
 
-# Protokolleri yapılandırma fonksiyonu
-function Set-ProtocolsClients {
+# Protokolleri yapılandırma fonksiyonu (Client ve Server birleşik)
+function Set-Protocols {
+    param(
+        [ValidateSet("Client", "Server", "Both")]
+        [string]$Type = "Both"
+    )
     
-    Write-Log "Protokol[Clients] yapılandırması başlatıldı." -LogType Info -VerboseOutput -InfoColor Cyan
+    # Hangi tipleri işleyeceğimizi belirle
+    $types = if ($Type -eq "Both") { @("Client", "Server") } else { @($Type) }
     
-    # Profilden protokol yapılandırmasını al
-    $protocols = @{}
-    $script:ActiveProfile.protocols.PSObject.Properties | ForEach-Object {
-        $protocols[$_.Name] = $_.Value
-    }
-
-    foreach ($protocol in ($protocols.Keys | Sort-Object)) {
-        $enabled = $protocols[$protocol]
-        $regPathClient = "HKLM:\SYSTEM\CurrentControlSet\Control\SecurityProviders\SCHANNEL\Protocols\$protocol\Client"
-
-        if ($script:DryRun) {
-            Write-DryRunAction -Action "PROTOKOL[Client]" -Target $protocol -Details $(if ($enabled) { "ENABLED" } else { "DISABLED" })
-            continue
-        }
-
-        try {
-            if ($enabled -eq $false) {
-                # Devre dışı bırakma işlemleri
-                New-Item $regPathClient -Force | Out-Null
-                New-ItemProperty -path $regPathClient -name Enabled -value 0 -PropertyType 'DWord' -Force | Out-Null
-                New-ItemProperty -path $regPathClient -name 'DisabledByDefault' -value 1 -PropertyType 'DWord' -Force | Out-Null
-            }
-            else {
-                # Etkinleştirme işlemleri
-                New-Item $regPathClient -Force | Out-Null
-                New-ItemProperty -path $regPathClient -name Enabled -value 1 -PropertyType 'DWord' -Force | Out-Null
-                New-ItemProperty -path $regPathClient -name 'DisabledByDefault' -value 0 -PropertyType 'DWord' -Force | Out-Null
-
-            }
-            Write-Log "$protocol $(if ($enabled) { 'enabled' } else { 'disabled' }) edildi." -LogType Info -VerboseOutput
-        }
-        catch {
-            Write-Log "$protocol [Clients] protokolü yapılandırılırken hata oluştu: $_" -LogType Error -VerboseOutput
-        }
-    }
-
-    Write-Log "Protokol[Clients] yapılandırması tamamlandı.`n" -LogType Info -VerboseOutput -InfoColor Cyan
-}
-
-
-# Protokolleri yapılandırma fonksiyonu
-
-function Set-ProtocolsServers {
-    
-    Write-Log "Protokol[Servers] yapılandırması başlatıldı." -LogType Info -VerboseOutput -InfoColor Cyan
-    
-    # Profilden protokol yapılandırmasını al
-    $protocols = @{}
-    $script:ActiveProfile.protocols.PSObject.Properties | ForEach-Object {
-        $protocols[$_.Name] = $_.Value
-    }
+    foreach ($t in $types) {
+        Write-Log "Protokol[$t] yapılandırması başlatıldı." -LogType Info -VerboseOutput -InfoColor Cyan
         
-    foreach ($protocol in ($protocols.Keys | Sort-Object)) {
-        $enabled = $protocols[$protocol]
-        $regPathServer = "HKLM:\SYSTEM\CurrentControlSet\Control\SecurityProviders\SCHANNEL\Protocols\$protocol\Server"
-
-        if ($script:DryRun) {
-            Write-DryRunAction -Action "PROTOKOL[Server]" -Target $protocol -Details $(if ($enabled) { "ENABLED" } else { "DISABLED" })
-            continue
+        # Profilden protokol yapılandırmasını al
+        $protocols = @{}
+        $script:ActiveProfile.protocols.PSObject.Properties | ForEach-Object {
+            $protocols[$_.Name] = $_.Value
         }
 
-        try {
-            if ($enabled -eq $false) {
-                # Devre dışı bırakma işlemleri
-                New-Item $regPathServer -Force | Out-Null
-                New-ItemProperty -path $regPathServer -name Enabled -value 0 -PropertyType 'DWord' -Force | Out-Null
-                New-ItemProperty -path $regPathServer -name 'DisabledByDefault' -value 1 -PropertyType 'DWord' -Force | Out-Null
+        foreach ($protocol in ($protocols.Keys | Sort-Object)) {
+            $enabled = $protocols[$protocol]
+            $regPath = "HKLM:\SYSTEM\CurrentControlSet\Control\SecurityProviders\SCHANNEL\Protocols\$protocol\$t"
+
+            if ($script:DryRun) {
+                Write-DryRunAction -Action "PROTOKOL[$t]" -Target $protocol -Details $(if ($enabled) { "ENABLED" } else { "DISABLED" })
+                continue
             }
-            else {
-                # Etkinleştirme işlemleri
-                New-Item $regPathServer -Force | Out-Null
-                New-ItemProperty -path $regPathServer -name Enabled -value 1 -PropertyType 'DWord' -Force | Out-Null
-                New-ItemProperty -path $regPathServer -name 'DisabledByDefault' -value 0 -PropertyType 'DWord' -Force | Out-Null
+
+            try {
+                if ($enabled -eq $false) {
+                    # Devre dışı bırakma işlemleri
+                    New-Item $regPath -Force | Out-Null
+                    New-ItemProperty -path $regPath -name Enabled -value 0 -PropertyType 'DWord' -Force | Out-Null
+                    New-ItemProperty -path $regPath -name 'DisabledByDefault' -value 1 -PropertyType 'DWord' -Force | Out-Null
+                }
+                else {
+                    # Etkinleştirme işlemleri
+                    New-Item $regPath -Force | Out-Null
+                    New-ItemProperty -path $regPath -name Enabled -value 1 -PropertyType 'DWord' -Force | Out-Null
+                    New-ItemProperty -path $regPath -name 'DisabledByDefault' -value 0 -PropertyType 'DWord' -Force | Out-Null
+                }
+                Write-Log "$protocol [$t] $(if ($enabled) { 'enabled' } else { 'disabled' }) edildi." -LogType Info -VerboseOutput
             }
-            Write-Log "$protocol $(if ($enabled) { 'enabled' } else { 'disabled' }) edildi." -LogType Info -VerboseOutput
+            catch {
+                Write-Log "$protocol [$t] protokolü yapılandırılırken hata oluştu: $_" -LogType Error -VerboseOutput
+            }
         }
-        catch {
-            Write-Log "$protocol [Servers] protokolü yapılandırılırken hata oluştu: $_" -LogType Error -VerboseOutput
-        }
+
+        Write-Log "Protokol[$t] yapılandırması tamamlandı.`n" -LogType Info -VerboseOutput -InfoColor Cyan
     }
-
-    Write-Log "Protokol[Servers] yapılandırması tamamlandı.`n" -LogType Info -VerboseOutput -InfoColor Cyan
 }
 
 # Şifreleme algoritmalarını yapılandırma fonksiyonu
@@ -1433,8 +1396,7 @@ function Invoke-SecurityConfiguration {
     
     Confirm-Execution
     Backup-RegistryKeys
-    Set-ProtocolsClients
-    Set-ProtocolsServers
+    Set-Protocols -Type "Both"
     Set-EncryptionAlgorithms
     Set-HashAlgorithms
     Set-KeyExchangeAlgorithms
