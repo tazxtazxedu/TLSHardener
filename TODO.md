@@ -1,6 +1,7 @@
 ﻿# TLSHardener - Yapılacaklar Listesi
 
-> Son Güncelleme: 2025-01-11
+> Son Güncelleme: 2025-11-29
+> Versiyon: 3.4
 
 ---
 

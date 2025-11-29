@@ -5,6 +5,7 @@ Windows sunucularda TLS/SSL güvenlik yapılandırmasını otomatik olarak sık�
 [![PowerShell](https://img.shields.io/badge/PowerShell-5.1+-blue.svg)](https://docs.microsoft.com/en-us/powershell/)
 [![Windows Server](https://img.shields.io/badge/Windows%20Server-2016%20|%202019%20|%202022%20|%202025-0078D6.svg)](https://www.microsoft.com/en-us/windows-server)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+[![Version](https://img.shields.io/badge/Version-3.4-orange.svg)](#)
 
 ---
 
@@ -14,6 +15,8 @@ Windows sunucularda TLS/SSL güvenlik yapılandırmasını otomatik olarak sık�
 - [Gereksinimler](#-gereksinimler)
 - [Kurulum](#-kurulum)
 - [Kullanım](#-kullanım)
+- [Uzak Sunucu Desteği](#-uzak-sunucu-desteği)
+- [Compliance Raporu](#-compliance-raporu)
 - [Yapılandırma Dosyaları](#-yapılandırma-dosyaları)
 - [Güvenlik Ayarları](#-güvenlik-ayarları)
 - [Uyumluluk](#-uyumluluk)
@@ -33,9 +36,11 @@ Windows sunucularda TLS/SSL güvenlik yapılandırmasını otomatik olarak sık�
 | 📦 **Otomatik Yedekleme** | Registry değişikliklerinden önce yedek alır |
 | 👁️ **Dry-Run Modu** | Değişiklik yapmadan önizleme (-WhatIf) |
 | 🎯 **Profil Desteği** | strict/recommended/compatible profilleri |
+| 🔄 **Rollback** | Önceki yapılandırmaya veya varsayılanlara dönüş |
+| 🌐 **Uzak Sunucu** | Birden fazla sunucuyu tek komutla yapılandırma |
+| 📊 **Compliance Raporu** | PCI-DSS, NIST, HIPAA, CIS uyumluluk kontrolü |
 | ✅ **Doğrulama Scripti** | Yapılandırma sonrası kontrol |
 | 📝 **Detaylı Loglama** | Tüm işlemler loglanır |
-| ⚙️ **JSON Yapılandırma** | Kolay özelleştirilebilir config dosyaları |
 
 ---
 

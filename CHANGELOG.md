@@ -10,13 +10,24 @@ ve bu proje [Semantic Versioning](https://semver.org/spec/v2.0.0.html) kullanır
 ## [Yayınlanmamış]
 
 ### Planlanıyor
-- Uzak Sunucu Desteği (PowerShell Remoting)
+- Pester unit testleri
+- CI/CD entegrasyonu
 
 ---
 
 ## [3.4.0] - 2025-11-29
 
 ### ✨ Eklendi
+- **Uzak Sunucu Desteği**: Birden fazla sunucuyu tek komutla yapılandırma
+  - `-ComputerName "Server01","Server02"` parametresi
+  - `-Credential` ile kimlik bilgisi desteği
+  - PowerShell Remoting (WinRM) kullanır
+  - Bağlantı testi (Ping + WinRM)
+  - Her sunucuda otomatik Registry yedekleme (`C:\TLSHardener-Backups\`)
+  - CSV sonuç raporu (`.\reports\TLSHardener-Remote_*.csv`)
+  - Dry-Run modu uzak sunucularda da çalışır
+  - Profil desteği uzak sunucularda da çalışır
+  - Tüm yapılandırma kategorileri: Protocols, Hashes, Ciphers, Key Exchange, DH Size, Cipher Suites, ECC Curves, FIPS, Strong Crypto
 - **Compliance Raporu**: Güvenlik standartlarına uyumluluk kontrolü
   - `TLSHardener-Compliance.ps1` scripti
   - PCI-DSS v4.0 kontrolleri (SSL/TLS, cipher suite'ler, hash algoritmaları)
@@ -25,8 +36,13 @@ ve bu proje [Semantic Versioning](https://semver.org/spec/v2.0.0.html) kullanır
   - CIS Benchmark kontrolleri (protokoller, NULL/RC4/DES cipher'lar)
   - `-Standard` parametresi: All, PCI-DSS, NIST, HIPAA, CIS
   - `-ExportReport` ile HTML rapor oluşturma
-  - `-Detailed` ile detaylı açıklamalar
-  - Renkli konsol çıktısı ve yüzde hesaplama
+  - `-OpenReport` ile otomatik tarayıcıda açma
+  - Accordion/collapsible bölümler ile modern HTML tasarım
+  - Tek satır özet (Genel Uyumluluk + Başarılı/Uyarı/Başarısız)
+
+### 🔄 Değişti
+- Versiyon 3.3 → 3.4
+- README.md güncellendi (Uzak Sunucu ve Compliance bölümleri)
 
 ---
 
