@@ -92,13 +92,15 @@
 
 ## 🛠️ Kod Kalitesi
 
-- [ ] **Tekrarlanan fonksiyonları birleştir**
-  - `Set-ProtocolsClients` ve `Set-ProtocolsServers` tek fonksiyon olabilir
-  - Parametre ile Client/Server ayrımı yapılabilir
+- [x] **Tekrarlanan fonksiyonları birleştir** ✅
+  - `Set-ProtocolsClients` ve `Set-ProtocolsServers` → `Set-Protocols -Type "Both"` olarak birleştirildi
+  - ~40% kod azalması sağlandı
 
-- [ ] **Hata yönetimini geliştir**
-  - Try-Catch bloklarını standartlaştır
-  - Hata kodları ekle
+- [x] **Hata yönetimini geliştir** ✅
+  - `$script:ErrorCodes` hashtable ile merkezi hata kodu sistemi eklendi
+  - `Write-TLSError` fonksiyonu ile standart hata yönetimi
+  - Kategorize hata kodları: Genel (1000-1099), Profil (1100-1199), Registry (1200-1299), Uzak Sunucu (1300-1399), Dosya (1400-1499), Yapılandırma (1500-1599)
+  - Tüm yapılandırma fonksiyonlarına try-catch ve ErrorAction Stop eklendi
 
 - [ ] **Pester testleri ekle**
   - Unit testler için `tests/` klasörü

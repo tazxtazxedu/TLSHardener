@@ -107,6 +107,100 @@ $script:ActiveProfile = $null
 $script:IsRemoteSession = $false
 
 # ============================================================================
+# HATA KODLARI VE YÖNETİMİ
+# ============================================================================
+
+# Hata kodları enum benzeri yapı
+$script:ErrorCodes = @{
+    # Genel Hatalar (1000-1099)
+    SUCCESS                    = @{ Code = 0;    Message = "İşlem başarılı" }
+    UNKNOWN_ERROR              = @{ Code = 1000; Message = "Bilinmeyen hata" }
+    PERMISSION_DENIED          = @{ Code = 1001; Message = "Yetki reddedildi - Yönetici olarak çalıştırın" }
+    INVALID_PARAMETER          = @{ Code = 1002; Message = "Geçersiz parametre" }
+    
+    # Profil Hataları (1100-1199)
+    PROFILE_NOT_FOUND          = @{ Code = 1100; Message = "Profil dosyası bulunamadı" }
+    PROFILE_INVALID_JSON       = @{ Code = 1101; Message = "Profil JSON formatı geçersiz" }
+    PROFILE_MISSING_PROPERTY   = @{ Code = 1102; Message = "Profil gerekli özellik eksik" }
+    
+    # Registry Hataları (1200-1299)
+    REGISTRY_ACCESS_DENIED     = @{ Code = 1200; Message = "Registry erişim engellendi" }
+    REGISTRY_KEY_NOT_FOUND     = @{ Code = 1201; Message = "Registry anahtarı bulunamadı" }
+    REGISTRY_WRITE_FAILED      = @{ Code = 1202; Message = "Registry yazma başarısız" }
+    REGISTRY_BACKUP_FAILED     = @{ Code = 1203; Message = "Registry yedekleme başarısız" }
+    REGISTRY_RESTORE_FAILED    = @{ Code = 1204; Message = "Registry geri yükleme başarısız" }
+    
+    # Uzak Sunucu Hataları (1300-1399)
+    REMOTE_CONNECTION_FAILED   = @{ Code = 1300; Message = "Uzak sunucu bağlantısı başarısız" }
+    REMOTE_PING_FAILED         = @{ Code = 1301; Message = "Ping başarısız" }
+    REMOTE_WINRM_FAILED        = @{ Code = 1302; Message = "WinRM bağlantısı başarısız" }
+    REMOTE_SESSION_FAILED      = @{ Code = 1303; Message = "Uzak oturum oluşturulamadı" }
+    REMOTE_EXECUTION_FAILED    = @{ Code = 1304; Message = "Uzak komut çalıştırma başarısız" }
+    
+    # Dosya Hataları (1400-1499)
+    FILE_NOT_FOUND             = @{ Code = 1400; Message = "Dosya bulunamadı" }
+    FILE_READ_FAILED           = @{ Code = 1401; Message = "Dosya okuma başarısız" }
+    FILE_WRITE_FAILED          = @{ Code = 1402; Message = "Dosya yazma başarısız" }
+    BACKUP_NOT_FOUND           = @{ Code = 1403; Message = "Yedek dosyası bulunamadı" }
+    
+    # Yapılandırma Hataları (1500-1599)
+    PROTOCOL_CONFIG_FAILED     = @{ Code = 1500; Message = "Protokol yapılandırması başarısız" }
+    CIPHER_CONFIG_FAILED       = @{ Code = 1501; Message = "Şifreleme yapılandırması başarısız" }
+    HASH_CONFIG_FAILED         = @{ Code = 1502; Message = "Hash yapılandırması başarısız" }
+    KEYEXCHANGE_CONFIG_FAILED  = @{ Code = 1503; Message = "Anahtar değişim yapılandırması başarısız" }
+    CIPHERSUITE_CONFIG_FAILED  = @{ Code = 1504; Message = "Cipher suite yapılandırması başarısız" }
+    ECC_CONFIG_FAILED          = @{ Code = 1505; Message = "ECC eğri yapılandırması başarısız" }
+}
+
+# Merkezi hata yönetim fonksiyonu
+function Write-TLSError {
+    param(
+        [Parameter(Mandatory=$true)]
+        [string]$ErrorType,
+        
+        [string]$Details = "",
+        
+        [string]$Target = "",
+        
+        [switch]$Throw,
+        
+        [System.Management.Automation.ErrorRecord]$Exception
+    )
+    
+    $errorInfo = $script:ErrorCodes[$ErrorType]
+    if (-not $errorInfo) {
+        $errorInfo = $script:ErrorCodes["UNKNOWN_ERROR"]
+    }
+    
+    $errorCode = $errorInfo.Code
+    $errorMessage = $errorInfo.Message
+    
+    # Hata mesajını oluştur
+    $fullMessage = "[TLS-$errorCode] $errorMessage"
+    if ($Target) { $fullMessage += " - Hedef: $Target" }
+    if ($Details) { $fullMessage += " - $Details" }
+    if ($Exception) { $fullMessage += " - Hata: $($Exception.Exception.Message)" }
+    
+    # Log'a yaz
+    Write-Log $fullMessage -LogType Error -VerboseOutput
+    
+    # İstenirse exception fırlat
+    if ($Throw) {
+        throw $fullMessage
+    }
+    
+    # Hata bilgisini döndür
+    return @{
+        Code = $errorCode
+        Type = $ErrorType
+        Message = $errorMessage
+        Details = $Details
+        Target = $Target
+        FullMessage = $fullMessage
+    }
+}
+
+# ============================================================================
 # UZAK SUNUCU FONKSİYONLARI
 # ============================================================================
 
@@ -125,7 +219,8 @@ function Test-RemoteConnection {
         }
         
         if (-not (Test-Connection @params)) {
-            return @{ Success = $false; Error = "Ping başarısız" }
+            $errorInfo = Write-TLSError -ErrorType "REMOTE_PING_FAILED" -Target $Computer
+            return @{ Success = $false; Error = $errorInfo.Message; ErrorCode = $errorInfo.Code }
         }
         
         # WinRM bağlantısını test et
@@ -138,10 +233,11 @@ function Test-RemoteConnection {
         $session = New-PSSession @sessionParams
         Remove-PSSession $session
         
-        return @{ Success = $true; Error = $null }
+        return @{ Success = $true; Error = $null; ErrorCode = 0 }
     }
     catch {
-        return @{ Success = $false; Error = $_.Exception.Message }
+        $errorInfo = Write-TLSError -ErrorType "REMOTE_WINRM_FAILED" -Target $Computer -Exception $_
+        return @{ Success = $false; Error = $errorInfo.Message; ErrorCode = $errorInfo.Code }
     }
 }
 
@@ -1032,6 +1128,7 @@ function Set-Protocols {
     
     # Hangi tipleri işleyeceğimizi belirle
     $types = if ($Type -eq "Both") { @("Client", "Server") } else { @($Type) }
+    $hasError = $false
     
     foreach ($t in $types) {
         Write-Log "Protokol[$t] yapılandırması başlatıldı." -LogType Info -VerboseOutput -InfoColor Cyan
@@ -1054,25 +1151,28 @@ function Set-Protocols {
             try {
                 if ($enabled -eq $false) {
                     # Devre dışı bırakma işlemleri
-                    New-Item $regPath -Force | Out-Null
-                    New-ItemProperty -path $regPath -name Enabled -value 0 -PropertyType 'DWord' -Force | Out-Null
-                    New-ItemProperty -path $regPath -name 'DisabledByDefault' -value 1 -PropertyType 'DWord' -Force | Out-Null
+                    New-Item $regPath -Force -ErrorAction Stop | Out-Null
+                    New-ItemProperty -path $regPath -name Enabled -value 0 -PropertyType 'DWord' -Force -ErrorAction Stop | Out-Null
+                    New-ItemProperty -path $regPath -name 'DisabledByDefault' -value 1 -PropertyType 'DWord' -Force -ErrorAction Stop | Out-Null
                 }
                 else {
                     # Etkinleştirme işlemleri
-                    New-Item $regPath -Force | Out-Null
-                    New-ItemProperty -path $regPath -name Enabled -value 1 -PropertyType 'DWord' -Force | Out-Null
-                    New-ItemProperty -path $regPath -name 'DisabledByDefault' -value 0 -PropertyType 'DWord' -Force | Out-Null
+                    New-Item $regPath -Force -ErrorAction Stop | Out-Null
+                    New-ItemProperty -path $regPath -name Enabled -value 1 -PropertyType 'DWord' -Force -ErrorAction Stop | Out-Null
+                    New-ItemProperty -path $regPath -name 'DisabledByDefault' -value 0 -PropertyType 'DWord' -Force -ErrorAction Stop | Out-Null
                 }
                 Write-Log "$protocol [$t] $(if ($enabled) { 'enabled' } else { 'disabled' }) edildi." -LogType Info -VerboseOutput
             }
             catch {
-                Write-Log "$protocol [$t] protokolü yapılandırılırken hata oluştu: $_" -LogType Error -VerboseOutput
+                Write-TLSError -ErrorType "PROTOCOL_CONFIG_FAILED" -Target "$protocol [$t]" -Exception $_
+                $hasError = $true
             }
         }
 
         Write-Log "Protokol[$t] yapılandırması tamamlandı.`n" -LogType Info -VerboseOutput -InfoColor Cyan
     }
+    
+    return (-not $hasError)
 }
 
 # Şifreleme algoritmalarını yapılandırma fonksiyonu
@@ -1086,6 +1186,7 @@ function Set-EncryptionAlgorithms {
     }
 
     $regPath = "HKLM:\SYSTEM\CurrentControlSet\Control\SecurityProviders\SCHANNEL\Ciphers"
+    $hasError = $false
 
     foreach ($algorithm in $encryptionAlgorithms.Keys) {
         $enabled = $encryptionAlgorithms[$algorithm]
@@ -1096,21 +1197,28 @@ function Set-EncryptionAlgorithms {
             continue
         }
         
-        $key = (Get-Item HKLM:\).OpenSubKey('SYSTEM\CurrentControlSet\Control\SecurityProviders\SCHANNEL\Ciphers', $true).CreateSubKey($algorithm)
-        Write-Log "$regPathAlgorithm registry KEY oluşturuldu" -LogType Info -VerboseOutput
+        try {
+            $key = (Get-Item HKLM:\).OpenSubKey('SYSTEM\CurrentControlSet\Control\SecurityProviders\SCHANNEL\Ciphers', $true).CreateSubKey($algorithm)
+            Write-Log "$regPathAlgorithm registry KEY oluşturuldu" -LogType Info -VerboseOutput
 
-        if ($enabled) {
-            $key.SetValue('Enabled', 0xffffffff, 'DWord')
-        }
-        else {
-            $key.SetValue('Enabled', 0x0, 'DWord')
-        }
+            if ($enabled) {
+                $key.SetValue('Enabled', 0xffffffff, 'DWord')
+            }
+            else {
+                $key.SetValue('Enabled', 0x0, 'DWord')
+            }
 
-        $key.Close()
-        Write-Log "$algorithm $(if ($enabled) { 'enabled' } else { 'disabled' }) edildi." -LogType Info -VerboseOutput
+            $key.Close()
+            Write-Log "$algorithm $(if ($enabled) { 'enabled' } else { 'disabled' }) edildi." -LogType Info -VerboseOutput
+        }
+        catch {
+            Write-TLSError -ErrorType "CIPHER_CONFIG_FAILED" -Target $algorithm -Exception $_
+            $hasError = $true
+        }
     }
 
     Write-Log "Şifreleme algoritmaları yapılandırması tamamlandı.`n" -LogType Info -VerboseOutput -InfoColor Cyan
+    return (-not $hasError)
 }
 
 # Hash algoritmalarını yapılandırma fonksiyonu
@@ -1124,6 +1232,7 @@ function Set-HashAlgorithms {
     }
 
     $regPath = "HKLM:\SYSTEM\CurrentControlSet\Control\SecurityProviders\SCHANNEL\Hashes"
+    $hasError = $false
 
     foreach ($algorithm in $hashAlgorithms.Keys) {
         $enabled = $hashAlgorithms[$algorithm]
@@ -1134,21 +1243,28 @@ function Set-HashAlgorithms {
             continue
         }
         
-        $key = (Get-Item HKLM:\).OpenSubKey('SYSTEM\CurrentControlSet\Control\SecurityProviders\SCHANNEL\Hashes', $true).CreateSubKey($algorithm)
-        Write-Log "$regPathAlgorithm registry KEY oluşturuldu" -LogType Info -VerboseOutput
+        try {
+            $key = (Get-Item HKLM:\).OpenSubKey('SYSTEM\CurrentControlSet\Control\SecurityProviders\SCHANNEL\Hashes', $true).CreateSubKey($algorithm)
+            Write-Log "$regPathAlgorithm registry KEY oluşturuldu" -LogType Info -VerboseOutput
 
-        if ($enabled) {
-            $key.SetValue('Enabled', 0xffffffff, 'DWord')
-        }
-        else {
-            $key.SetValue('Enabled', 0x0, 'DWord')
-        }
+            if ($enabled) {
+                $key.SetValue('Enabled', 0xffffffff, 'DWord')
+            }
+            else {
+                $key.SetValue('Enabled', 0x0, 'DWord')
+            }
 
-        $key.Close()
-        Write-Log "$algorithm $(if ($enabled) { 'enabled' } else { 'disabled' }) edildi." -LogType Info -VerboseOutput
+            $key.Close()
+            Write-Log "$algorithm $(if ($enabled) { 'enabled' } else { 'disabled' }) edildi." -LogType Info -VerboseOutput
+        }
+        catch {
+            Write-TLSError -ErrorType "HASH_CONFIG_FAILED" -Target $algorithm -Exception $_
+            $hasError = $true
+        }
     }
 
     Write-Log "Hash algoritmaları yapılandırması tamamlandı.`n" -LogType Info -VerboseOutput -InfoColor Cyan
+    return (-not $hasError)
 }
 
 # Anahtar değişim algoritmalarını yapılandırma fonksiyonu
@@ -1167,6 +1283,7 @@ function Set-KeyExchangeAlgorithms {
     }
 
     $regPath = "HKLM:\SYSTEM\CurrentControlSet\Control\SecurityProviders\SCHANNEL\KeyExchangeAlgorithms"
+    $hasError = $false
 
     foreach ($algorithm in $keyExchangeAlgorithms.Keys) {
         # DH-MinKeyBitLength gibi meta bilgileri atla
@@ -1184,27 +1301,34 @@ function Set-KeyExchangeAlgorithms {
             continue
         }
         
-        $key = (Get-Item HKLM:\).OpenSubKey('SYSTEM\CurrentControlSet\Control\SecurityProviders\SCHANNEL\KeyExchangeAlgorithms', $true).CreateSubKey($algorithm)
-        Write-Log "$regPathAlgorithm registry KEY oluşturuldu" -LogType Info -VerboseOutput
+        try {
+            $key = (Get-Item HKLM:\).OpenSubKey('SYSTEM\CurrentControlSet\Control\SecurityProviders\SCHANNEL\KeyExchangeAlgorithms', $true).CreateSubKey($algorithm)
+            Write-Log "$regPathAlgorithm registry KEY oluşturuldu" -LogType Info -VerboseOutput
 
-        if ($enabled) {
-            $key.SetValue('Enabled', 0xffffffff, 'DWord')
-            if ($algorithm -eq 'Diffie-Hellman') {
-                $dhKeyHex = [convert]::ToInt32($dhMinKeyBitLength)
-                $key.SetValue('ServerMinKeyBitLength', $dhKeyHex, 'DWord')
-                $key.SetValue('ClientMinKeyBitLength', $dhKeyHex, 'DWord')
-                Write-Log "DH MinKeyBitLength: $dhMinKeyBitLength bit olarak ayarlandı" -LogType Info -VerboseOutput
+            if ($enabled) {
+                $key.SetValue('Enabled', 0xffffffff, 'DWord')
+                if ($algorithm -eq 'Diffie-Hellman') {
+                    $dhKeyHex = [convert]::ToInt32($dhMinKeyBitLength)
+                    $key.SetValue('ServerMinKeyBitLength', $dhKeyHex, 'DWord')
+                    $key.SetValue('ClientMinKeyBitLength', $dhKeyHex, 'DWord')
+                    Write-Log "DH MinKeyBitLength: $dhMinKeyBitLength bit olarak ayarlandı" -LogType Info -VerboseOutput
+                }
             }
-        }
-        else {
-            $key.SetValue('Enabled', 0x0, 'DWord')
-        }
+            else {
+                $key.SetValue('Enabled', 0x0, 'DWord')
+            }
 
-        $key.Close()
-        Write-Log "$algorithm $(if ($enabled) { 'enabled' } else { 'disabled' }) edildi." -LogType Info -VerboseOutput
+            $key.Close()
+            Write-Log "$algorithm $(if ($enabled) { 'enabled' } else { 'disabled' }) edildi." -LogType Info -VerboseOutput
+        }
+        catch {
+            Write-TLSError -ErrorType "KEYEXCHANGE_CONFIG_FAILED" -Target $algorithm -Exception $_
+            $hasError = $true
+        }
     }
 
     Write-Log "TLS Anahtar değişim algoritmaları yapılandırması tamamlandı.`n" -LogType Info -VerboseOutput -InfoColor Cyan
+    return (-not $hasError)
 }
 
 # FIPS algoritma politikasını devre dışı bırakma fonksiyonu
@@ -1218,18 +1342,20 @@ function Set-FIPSAlgorithmPolicy {
     
     if ($script:DryRun) {
         Write-DryRunAction -Action "FIPS" -Target "FipsAlgorithmPolicy" -Details "Enabled = $EnabledValue"
-        return
+        return $true
     }
     
     try {
         if (!(Test-Path $regPath)) {
-            New-Item -Path $regPath -Force | Out-Null
+            New-Item -Path $regPath -Force -ErrorAction Stop | Out-Null
         }
-        Set-ItemProperty -Path $regPath -Name "Enabled" -Value $EnabledValue -Type DWord
+        Set-ItemProperty -Path $regPath -Name "Enabled" -Value $EnabledValue -Type DWord -ErrorAction Stop
         Write-Log -Message "FIPS Algorithm Policy 'Enabled' değeri başarıyla $EnabledValue olarak ayarlandı." -LogType "Info" -VerboseOutput -InfoColor Yellow
+        return $true
     }
     catch {
-        Write-Log -Message "FIPS Algorithm Policy 'Enabled' değeri ayarlanırken hata oluştu: $_" -LogType "Error" -VerboseOutput
+        Write-TLSError -ErrorType "REGISTRY_WRITE_FAILED" -Target "FipsAlgorithmPolicy" -Exception $_
+        return $false
     }
 }
 
@@ -1396,11 +1522,11 @@ function Invoke-SecurityConfiguration {
     
     Confirm-Execution
     Backup-RegistryKeys
-    Set-Protocols -Type "Both"
-    Set-EncryptionAlgorithms
-    Set-HashAlgorithms
-    Set-KeyExchangeAlgorithms
-    Set-FIPSAlgorithmPolicy -EnabledValue 0
+    Set-Protocols -Type "Both" | Out-Null
+    Set-EncryptionAlgorithms | Out-Null
+    Set-HashAlgorithms | Out-Null
+    Set-KeyExchangeAlgorithms | Out-Null
+    Set-FIPSAlgorithmPolicy -EnabledValue 0 | Out-Null
     Set-CipherSuites -regPath $regPath -tls13CipherSuites $tls13CipherSuites -tls12CipherSuites $tls12CipherSuites
     Set-EccCurves -regPath $regPath -eccCurves $eccCurves
     Set-StrongCrypto
