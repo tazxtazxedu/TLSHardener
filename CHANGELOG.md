@@ -27,7 +27,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Links to language-specific documentation
   - Quick start examples for both languages
 - **Project Cleanup**: Reorganized file structure
-  - Old scripts moved to bk/ (backup) folder
+  - Each language folder (EN/, TR/) now has its own config/ and assets/
+  - Config descriptions translated to English for EN/config/
   - Updated CONTRIBUTING.md (English only)
   - Updated CHANGELOG.md (English only)
 

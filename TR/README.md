@@ -9,7 +9,7 @@ Windows sunucularda TLS/SSL güvenlik yapılandırmasını otomatik olarak sık�
 [![PowerShell](https://img.shields.io/badge/PowerShell-5.1+-blue.svg)](https://docs.microsoft.com/en-us/powershell/)
 [![Windows Server](https://img.shields.io/badge/Windows%20Server-2016%20|%202019%20|%202022%20|%202025-0078D6.svg)](https://www.microsoft.com/en-us/windows-server)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
-[![Version](https://img.shields.io/badge/Version-3.5-orange.svg)](CHANGELOG.md)
+[![Version](https://img.shields.io/badge/Version-3.6-orange.svg)](CHANGELOG.md)
 
 ### 🏷️ Keywords / Anahtar Kelimeler
 `TLS` `SSL` `Security` `Hardening` `Windows Server` `PowerShell` `SCHANNEL` `Cipher Suites` `PCI-DSS` `NIST` `HIPAA` `CIS` `TLS 1.3` `TLS 1.2` `Registry` `Compliance` `Güvenlik` `Sıkılaştırma`

@@ -6,7 +6,7 @@
 [![PowerShell](https://img.shields.io/badge/PowerShell-5.1+-blue.svg)](https://docs.microsoft.com/en-us/powershell/)
 [![Windows Server](https://img.shields.io/badge/Windows%20Server-2016%20|%202019%20|%202022%20|%202025-0078D6.svg)](https://www.microsoft.com/en-us/windows-server)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
-[![Version](https://img.shields.io/badge/Version-3.5-orange.svg)](CHANGELOG.md)
+[![Version](https://img.shields.io/badge/Version-3.6-orange.svg)](CHANGELOG.md)
 
 ---
 
@@ -81,21 +81,27 @@ TLSHardener/
 │   ├── TLSHardener-Compliance.ps1
 │   ├── TLSHardener-Report.ps1
 │   ├── TLSHardener-Clean.ps1
-│   └── README.md
+│   ├── README.md
+│   ├── 📁 config/            # English profile configs
+│   │   ├── strict.json
+│   │   ├── recommended.json
+│   │   ├── compatible.json
+│   │   └── custom.json
+│   └── 📁 assets/            # Icons & images
 ├── 📁 TR/                    # 🇹🇷 Türkçe scriptler & dokümanlar
 │   ├── TLSHardener.ps1
 │   ├── TLSHardener-Verify.ps1
 │   ├── TLSHardener-Compliance.ps1
 │   ├── TLSHardener-Report.ps1
 │   ├── TLSHardener-Clean.ps1
-│   └── README.md
-├── 📁 config/                # Profile configurations (shared)
-│   ├── strict.json           # Maximum security (TLS 1.3 only)
-│   ├── recommended.json      # Balanced (default)
-│   ├── compatible.json       # Legacy support
-│   └── custom.json           # User customization
-├── 📁 assets/                # Icons & images
-├── 📄 README.md              # This file
+│   ├── README.md
+│   ├── 📁 config/            # Türkçe profil yapılandırmaları
+│   │   ├── strict.json
+│   │   ├── recommended.json
+│   │   ├── compatible.json
+│   │   └── custom.json
+│   └── 📁 assets/            # Icons & images
+├── 📄 README.md              # This file (bilingual)
 ├── 📄 LICENSE                # MIT License
 ├── 📄 CHANGELOG.md           # Version history
 ├── 📄 CONTRIBUTING.md        # Contribution guide
