@@ -87,7 +87,7 @@ $PSVersionTable.PSVersion
 ### Yöntem 1: Git Clone
 
 ```powershell
-git clone https://github.com/kullanici/TLSHardener.git
+git clone https://github.com/tazxtazxedu/TLSHardener.git
 cd TLSHardener
 ```
 
