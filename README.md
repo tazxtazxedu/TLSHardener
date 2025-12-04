@@ -1,665 +1,148 @@
 ﻿# 🔐 TLSHardener
 
-**Automated TLS/SSL Security Hardening for Windows Server** | **Windows Sunucular için Otomatik TLS/SSL Güvenlik Sıkılaştırma**
-
-A comprehensive PowerShell script to harden TLS/SSL security configuration on Windows servers. Disable weak protocols (SSL 2.0/3.0, TLS 1.0/1.1), enable secure ciphers (AES-GCM), and ensure compliance with PCI-DSS, NIST, HIPAA, and CIS benchmarks.
-
-Windows sunucularda TLS/SSL güvenlik yapılandırmasını otomatik olarak sıkılaştıran kapsamlı PowerShell scripti. Zayıf protokolleri devre dışı bırakın, güvenli cipher'ları etkinleştirin ve güvenlik standartlarına uyumluluğu sağlayın.
+**Automated TLS/SSL Security Hardening for Windows Server**  
+**Windows Sunucular için Otomatik TLS/SSL Güvenlik Sıkılaştırma**
 
 [![PowerShell](https://img.shields.io/badge/PowerShell-5.1+-blue.svg)](https://docs.microsoft.com/en-us/powershell/)
 [![Windows Server](https://img.shields.io/badge/Windows%20Server-2016%20|%202019%20|%202022%20|%202025-0078D6.svg)](https://www.microsoft.com/en-us/windows-server)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 [![Version](https://img.shields.io/badge/Version-3.5-orange.svg)](CHANGELOG.md)
 
-### 🏷️ Keywords / Anahtar Kelimeler
-`TLS` `SSL` `Security` `Hardening` `Windows Server` `PowerShell` `SCHANNEL` `Cipher Suites` `PCI-DSS` `NIST` `HIPAA` `CIS` `TLS 1.3` `TLS 1.2` `Registry` `Compliance` `Güvenlik` `Sıkılaştırma`
+---
+
+## 🌍 Language / Dil
+
+| 🇬🇧 English | 🇹🇷 Türkçe |
+|:----------:|:----------:|
+| [**📖 English Documentation**](EN/README.md) | [**📖 Türkçe Dokümantasyon**](TR/README.md) |
+| [EN/TLSHardener.ps1](EN/TLSHardener.ps1) | [TR/TLSHardener.ps1](TR/TLSHardener.ps1) |
 
 ---
 
-## 📋 İçindekiler
+## 🔍 Keywords / Anahtar Kelimeler
 
-- [Özellikler](#-özellikler)
-- [Gereksinimler](#-gereksinimler)
-- [Kurulum](#-kurulum)
-- [Kullanım](#-kullanım)
-- [Uzak Sunucu Desteği](#-uzak-sunucu-desteği)
-- [Compliance Raporu](#-compliance-raporu)
-- [Yapılandırma Dosyaları](#-yapılandırma-dosyaları)
-- [Güvenlik Ayarları](#-güvenlik-ayarları)
-- [Uyumluluk](#-uyumluluk)
-- [Sorun Giderme](#-sorun-giderme)
-- [Katkıda Bulunma](#-katkıda-bulunma)
+### 🇬🇧 English Keywords
+`TLS` `SSL` `Security` `Hardening` `Windows Server` `PowerShell` `SCHANNEL` `Cipher Suites` `PCI-DSS` `NIST` `HIPAA` `CIS` `TLS 1.3` `TLS 1.2` `Registry` `Compliance` `Encryption` `Certificate` `Protocol` `Vulnerability` `Security Audit` `Server Hardening` `Cryptography` `AES-GCM` `SHA256` `ECDHE` `Best Practices` `Windows Security` `Network Security` `SSL Disable` `TLS Enable` `Cipher Configuration`
+
+### 🇹🇷 Türkçe Anahtar Kelimeler
+`TLS` `SSL` `Güvenlik` `Sıkılaştırma` `Windows Sunucu` `PowerShell` `SCHANNEL` `Şifreleme Paketleri` `PCI-DSS` `NIST` `HIPAA` `CIS` `TLS 1.3` `TLS 1.2` `Registry` `Uyumluluk` `Şifreleme` `Sertifika` `Protokol` `Güvenlik Açığı` `Güvenlik Denetimi` `Sunucu Sıkılaştırma` `Kriptografi` `AES-GCM` `SHA256` `ECDHE` `En İyi Uygulamalar` `Windows Güvenliği` `Ağ Güvenliği` `SSL Devre Dışı` `TLS Etkinleştirme` `Cipher Yapılandırma`
 
 ---
 
-## ✨ Özellikler
+## ⚠️ Important Warning / Önemli Uyarı
 
-| Özellik | Açıklama |
-|---------|----------|
-| 🔒 **Protokol Yönetimi** | SSL 2.0/3.0, TLS 1.0/1.1 devre dışı, TLS 1.2/1.3 etkin |
-| 🛡️ **Cipher Suite Optimizasyonu** | Sadece GCM modlu güvenli cipher'lar |
-| 🔑 **DH Key Size** | Minimum 3072-bit Diffie-Hellman anahtarı |
-| #️⃣ **Hash Algoritmaları** | MD5/SHA1 kapalı, SHA256/384/512 açık |
-| 📦 **Otomatik Yedekleme** | Registry değişikliklerinden önce yedek alır |
-| 👁️ **Dry-Run Modu** | Değişiklik yapmadan önizleme (-WhatIf) |
-| 🎯 **Profil Desteği** | strict/recommended/compatible profilleri |
-| 🔄 **Rollback** | Önceki yapılandırmaya veya varsayılanlara dönüş |
-| 🌐 **Uzak Sunucu** | Birden fazla sunucuyu tek komutla yapılandırma |
-| 📊 **Compliance Raporu** | PCI-DSS, NIST, HIPAA, CIS uyumluluk kontrolü |
-| ✅ **Doğrulama Scripti** | Yapılandırma sonrası kontrol |
-| 📝 **Detaylı Loglama** | Tüm işlemler loglanır |
-
----
-
-## 📦 Gereksinimler
-
-### Sistem Gereksinimleri
-
-| Gereksinim | Minimum |
-|------------|---------|
-| İşletim Sistemi | Windows Server 2016+ veya Windows 10+ |
-| PowerShell | 5.1 veya üzeri |
-| Yetki | Administrator |
-| TLS 1.3 Desteği | Windows Server 2022+ / Windows 11+ |
-
-### Ön Koşullar
-
-```powershell
-# PowerShell versiyonunu kontrol et
-$PSVersionTable.PSVersion
-
-# Administrator olarak çalıştığını doğrula
-([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole] "Administrator")
-```
-
----
-
-## ⚠️ ÖNEMLİ UYARI / IMPORTANT WARNING
-
-> **🇹🇷 TÜRKÇE:** Bu scripti çalıştırmadan önce mutlaka sistem yedeği alın! Registry değişiklikleri geri alınamaz sorunlara yol açabilir. Önce `-WhatIf` parametresi ile test edin.
->
 > **🇬🇧 ENGLISH:** Always create a system backup before running this script! Registry changes can cause irreversible issues. Test with `-WhatIf` parameter first.
+>
+> **🇹🇷 TÜRKÇE:** Bu scripti çalıştırmadan önce mutlaka sistem yedeği alın! Registry değişiklikleri geri alınamaz sorunlara yol açabilir. Önce `-WhatIf` parametresi ile test edin.
 
 ---
 
-## 📥 Kurulum
+## ✨ Features / Özellikler
 
-### Yöntem 1: Git Clone
+| 🇬🇧 Feature | 🇹🇷 Özellik |
+|-------------|-------------|
+| 🔒 Disable SSL 2.0/3.0, TLS 1.0/1.1 | 🔒 SSL 2.0/3.0, TLS 1.0/1.1 devre dışı |
+| ✅ Enable TLS 1.2/1.3 | ✅ TLS 1.2/1.3 etkinleştirme |
+| 🛡️ GCM-only cipher suites | 🛡️ Sadece GCM cipher suite'leri |
+| 🔑 3072-bit DH key minimum | 🔑 Minimum 3072-bit DH anahtarı |
+| 📊 PCI-DSS, NIST, HIPAA, CIS compliance | 📊 PCI-DSS, NIST, HIPAA, CIS uyumluluğu |
+| 📦 Automatic backup before changes | 📦 Değişiklik öncesi otomatik yedekleme |
+| 👁️ Dry-run mode (-WhatIf) | 👁️ Önizleme modu (-WhatIf) |
+| 🔄 Rollback support | 🔄 Geri alma desteği |
+| 🌐 Remote server support | 🌐 Uzak sunucu desteği |
+
+---
+
+## 📥 Quick Start / Hızlı Başlangıç
 
 ```powershell
+# Clone repository
 git clone https://github.com/tazxtazxedu/TLSHardener.git
 cd TLSHardener
-```
 
-### Yöntem 2: Manuel İndirme
+# 🇬🇧 English version
+.\EN\TLSHardener.ps1 -WhatIf              # Preview
+.\EN\TLSHardener.ps1 -Profile recommended  # Apply
 
-1. Repository'yi ZIP olarak indirin
-2. İstediğiniz klasöre çıkartın
-3. PowerShell'i Administrator olarak açın
-
----
-
-## 🚀 Kullanım
-
-### Temel Kullanım
-
-```powershell
-# Standart çalıştırma (onay ister)
-.\TLSHardener.ps1
-
-# Onay istemeden çalıştır
-.\TLSHardener.ps1 -BypassConfirmation
-
-# .NET Strong Crypto ile çalıştır
-.\TLSHardener.ps1 -EnableStrongCrypto
-
-# Tüm parametrelerle
-.\TLSHardener.ps1 -BypassConfirmation -EnableStrongCrypto
-```
-
-### 🎯 Profil Kullanımı
-
-Farklı güvenlik seviyeleri için hazır profiller:
-
-```powershell
-# Strict profil - Maksimum güvenlik, sadece TLS 1.3
-.\TLSHardener.ps1 -Profile strict
-
-# Recommended profil - Dengeli güvenlik (varsayılan ayarlar)
-.\TLSHardener.ps1 -Profile recommended
-
-# Compatible profil - Eski sistemlerle uyumlu
-.\TLSHardener.ps1 -Profile compatible
-
-# Profil ile Dry-Run
-.\TLSHardener.ps1 -Profile strict -WhatIf
-```
-
-#### Profil Karşılaştırması
-
-| Özellik | Strict | Recommended | Compatible |
-|---------|--------|-------------|------------|
-| **TLS 1.2** | ❌ Kapalı | ✅ Açık | ✅ Açık |
-| **TLS 1.3** | ✅ Açık | ✅ Açık | ✅ Açık |
-| **CBC Cipher** | ❌ Yasak | ❌ Yasak | ✅ İzin |
-| **DH Key Size** | 4096 bit | 3072 bit | 2048 bit |
-| **AES-128** | ❌ Kapalı | ✅ Açık | ✅ Açık |
-| **Cipher Sayısı** | 2 | 9 | 15 |
-| **Uyumluluk** | Düşük | Orta | Yüksek |
-| **Güvenlik** | Maksimum | Yüksek | Orta |
-
-### Dry-Run Modu (Önizleme)
-
-Hiçbir değişiklik yapmadan ne olacağını görmek için:
-
-```powershell
-.\TLSHardener.ps1 -WhatIf
-```
-
-Örnek çıktı:
-```
-╔════════════════════════════════════════════════════════════════╗
-║                    DRY-RUN MODU AKTİF                          ║
-║  Hiçbir değişiklik yapılmayacak, sadece önizleme gösterilecek  ║
-╚════════════════════════════════════════════════════════════════╝
-
-[DRY-RUN] PROTOKOL[Client] : TLS 1.0 -> DISABLED
-[DRY-RUN] PROTOKOL[Client] : TLS 1.2 -> ENABLED
-[DRY-RUN] CIPHER SUITES : TLS 1.3 ve TLS 1.2 -> 9 cipher suite yapılandırılacak
-...
-```
-
-### Diğer Scriptler
-
-```powershell
-# Mevcut TLS yapılandırmasını raporla
-.\TLSHardener-Report.ps1
-
-# Yapılandırmayı temizle/sıfırla
-.\TLSHardener-Clean.ps1
-
-# Yapılandırmayı doğrula
-.\TLSHardener-Verify.ps1
-
-# Profil bazlı doğrulama
-.\TLSHardener-Verify.ps1 -Profile recommended
-
-# HTML rapor ile doğrulama
-.\TLSHardener-Verify.ps1 -Profile strict -ExportReport
-```
-
-### 🔄 Rollback (Geri Alma)
-
-Yapılandırmayı geri almak için esnek seçenekler:
-
-```powershell
-# İnteraktif mod - mevcut yedekleri listeler ve seçim yaparsınız
-.\TLSHardener.ps1 -Rollback
-
-# Belirli bir yedek dosyasını yükle
-.\TLSHardener.ps1 -Rollback -BackupFile ".\backups\20251129_103045_SCHANNEL.reg"
-
-# Windows varsayılanlarına dön (tüm TLS ayarlarını temizle)
-.\TLSHardener.ps1 -Rollback -ToDefaults
-
-# Onay istemeden rollback
-.\TLSHardener.ps1 -Rollback -ToDefaults -BypassConfirmation
-```
-
-Rollback işlemi sırasında:
-- Aynı zaman damgalı tüm yedek dosyaları gruplandırılır
-- Seçilen yedek grubundaki tüm dosyalar birlikte yüklenir
-- Yedek yoksa Windows varsayılanlarına dönme seçeneği sunulur
-
-### 🌐 Uzak Sunucu Desteği
-
-#### Ön Gereksinimler
-
-Uzak sunucu desteği için PowerShell Remoting (WinRM) gereklidir. Önce hedef sunucularda aşağıdaki ayarları yapın:
-
-```powershell
-# Hedef sunucularda WinRM'i etkinleştirin
-Enable-PSRemoting -Force
-
-# Güvenlik duvarı kuralını kontrol edin
-Get-NetFirewallRule -Name "WINRM-HTTP-In-TCP" | Enable-NetFirewallRule
-
-# Trusted Hosts ekleyin (gerekirse)
-Set-Item WSMan:\localhost\Client\TrustedHosts -Value "Server01,Server02"
-```
-
-#### Kullanım
-
-Birden fazla sunucuyu tek komutla yapılandırın:
-
-```powershell
-# Tek sunucu
-.\TLSHardener.ps1 -ComputerName "Server01" -Profile recommended
-
-# Birden fazla sunucu
-.\TLSHardener.ps1 -ComputerName "Server01","Server02","Server03" -Profile strict
-
-# Kimlik bilgisi ile
-.\TLSHardener.ps1 -ComputerName "Server01" -Credential (Get-Credential)
-
-# Dry-Run ile önizleme
-.\TLSHardener.ps1 -ComputerName "Server01","Server02" -WhatIf
-
-# Strong Crypto ile
-.\TLSHardener.ps1 -ComputerName "Server01" -EnableStrongCrypto -BypassConfirmation
-```
-
-#### Çıktı
-
-- Bağlantı testi ve durum raporu
-- Her sunucu için ayrıntılı ilerleme
-- CSV formatında sonuç raporu (`.\reports\TLSHardener-Remote_*.csv`)
-
-### 📋 Compliance Raporu (Uyumluluk Kontrolü)
-
-Güvenlik standartlarına uyumluluğu kontrol edin:
-
-```powershell
-# Tüm standartları kontrol et
-.\TLSHardener-Compliance.ps1
-
-# Sadece belirli bir standart
-.\TLSHardener-Compliance.ps1 -Standard PCI-DSS
-.\TLSHardener-Compliance.ps1 -Standard NIST
-.\TLSHardener-Compliance.ps1 -Standard HIPAA
-.\TLSHardener-Compliance.ps1 -Standard CIS
-
-# HTML rapor oluştur
-.\TLSHardener-Compliance.ps1 -ExportReport
-
-# HTML rapor oluştur ve tarayıcıda aç
-.\TLSHardener-Compliance.ps1 -OpenReport
-
-# Detaylı açıklamalar
-.\TLSHardener-Compliance.ps1 -Detailed
-```
-
-Desteklenen standartlar:
-| Standart | Açıklama |
-|----------|----------|
-| **PCI-DSS v4.0** | Payment Card Industry Data Security Standard |
-| **NIST SP 800-52** | Guidelines for TLS Implementations |
-| **HIPAA** | Health Insurance Portability and Accountability Act |
-| **CIS Benchmark** | Center for Internet Security Windows Hardening |
-
-HTML Rapor Özellikleri:
-- 📊 Büyük ve okunabilir yazı boyutları
-- 🎨 Modern dark theme tasarım
-- 📋 Tıklanabilir genişleyebilir bölümler (Accordion)
-- ✅❌⚠️ Renkli durum ikonları
-- 💡 Başarısız kontroller için çözüm önerileri
-
-Örnek çıktı:
-```
-╔════════════════════════════════════════════════════════════════════╗
-║          🔐 TLSHardener COMPLIANCE RAPORU v1.0                     ║
-╚════════════════════════════════════════════════════════════════════╝
-
-═══════════════════════════════════════════════════════════════════════
-  📋 PCI-DSS v4.0
-═══════════════════════════════════════════════════════════════════════
-
-  ✅ [4.2.1.a] SSL 2.0 devre dışı
-  ✅ [4.2.1.b] SSL 3.0 devre dışı
-  ✅ [4.2.1.c] TLS 1.0 devre dışı
-  ❌ [4.2.1.f] Zayıf cipher suite'ler devre dışı
-
-═══════════════════════════════════════════════════════════════════════
-  📊 UYUMLULUK ÖZETİ
-═══════════════════════════════════════════════════════════════════════
-
-  ✅ PCI-DSS - 85.7% uyumlu (6 geçti, 1 başarısız, 0 uyarı)
-  ✅ NIST - 100% uyumlu (6 geçti, 0 başarısız, 0 uyarı)
-  
-  TOPLAM: 92.3% uyumlu
-```
-
-### ✅ Doğrulama Scripti
-
-Yapılandırma sonrası ayarların doğru uygulandığını kontrol edin:
-
-```powershell
-# Temel doğrulama
-.\TLSHardener-Verify.ps1
-
-# Profil bazlı doğrulama (hangi profili uyguladıysanız ona göre)
-.\TLSHardener-Verify.ps1 -Profile recommended
-
-# HTML rapor oluştur
-.\TLSHardener-Verify.ps1 -Profile strict -ExportReport
-```
-
-Örnek çıktı:
-```
-╔════════════════════════════════════════════════════════════════════╗
-║              🔐 TLSHardener DOĞRULAMA SCRIPTİ v1.1                  ║
-╚════════════════════════════════════════════════════════════════════╝
-
-======================================================================
-  PROTOKOL AYARLARI
-======================================================================
-  ✅ TLS 1.0 [Server]              Beklenen: Kapalı    Mevcut: Kapalı
-  ✅ TLS 1.2 [Server]              Beklenen: Açık      Mevcut: Açık
-  ✅ TLS 1.3 [Server]              Beklenen: Açık      Mevcut: Açık
-
-======================================================================
-  DOĞRULAMA ÖZETİ
-======================================================================
-  Toplam Kontrol  : 35
-  ✅ Başarılı      : 32
-  ❌ Başarısız     : 0
-  ⚠️ Uyarı         : 3
-  Başarı Oranı    : 91.4%
+# 🇹🇷 Türkçe versiyon
+.\TR\TLSHardener.ps1 -WhatIf              # Önizleme
+.\TR\TLSHardener.ps1 -Profile recommended  # Uygula
 ```
 
 ---
 
-## 📁 Yapılandırma Dosyaları
-
-Tüm profil ayarları `config/` klasöründeki JSON dosyalarında tutulur:
-
-```
-config/
-├── strict.json          # Maksimum güvenlik (TLS 1.3 only)
-├── recommended.json     # Önerilen ayarlar (varsayılan)
-├── compatible.json      # Legacy uyumluluk
-└── custom.json          # Kullanıcı özelleştirmesi
-```
-
-### Profil Dosyaları
-
-Her profil tüm güvenlik ayarlarını tek dosyada tanımlar:
-
-#### strict.json
-```json
-{
-    "name": "Strict",
-    "description": "Sadece TLS 1.3 ve en güçlü cipher'lar",
-    "protocols": {
-        "TLS 1.2": false,
-        "TLS 1.3": true
-    },
-    "cipherSuitesTls13": [
-        "TLS_AES_256_GCM_SHA384",
-        "TLS_CHACHA20_POLY1305_SHA256"
-    ],
-    "dhMinKeySize": 4096,
-    "allowCBC": false
-}
-```
-
-#### recommended.json (Varsayılan)
-```json
-{
-    "name": "Recommended", 
-    "description": "TLS 1.2/1.3 ve GCM cipher'lar",
-    "protocols": {
-        "TLS 1.2": true,
-        "TLS 1.3": true
-    },
-    "dhMinKeySize": 3072,
-    "allowCBC": false
-}
-```
-
-#### compatible.json
-```json
-{
-    "name": "Compatible",
-    "description": "Eski sistemlerle uyumlu, CBC dahil",
-    "protocols": {
-        "TLS 1.2": true,
-        "TLS 1.3": true
-    },
-    "dhMinKeySize": 2048,
-    "allowCBC": true
-}
-```
-
-#### custom.json
-```json
-{
-    "name": "Custom",
-    "description": "Kendi ihtiyaçlarınıza göre düzenleyin",
-    // recommended.json kopyası - özgürce düzenleyebilirsiniz
-}
-```
-
-### Örnek: protocols-server.json
-
-```json
-{
-  "Multi-Protocol Unified Hello": false,
-  "PCT 1.0": false,
-  "SSL 2.0": false,
-  "SSL 3.0": false,
-  "TLS 1.0": false,
-  "TLS 1.1": false,
-  "TLS 1.2": true,
-  "TLS 1.3": true
-}
-```
-
-### Örnek: cipher-suites-tls12.json
-
-```json
-{
-    "$12CipherSuites": [
-        "TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384",
-        "TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256",
-        "TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384",
-        "TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256",
-        "TLS_RSA_WITH_AES_256_GCM_SHA384",
-        "TLS_RSA_WITH_AES_128_GCM_SHA256"
-    ]
-}
-```
-
----
-
-## 🔒 Güvenlik Ayarları
-
-### Protokoller
-
-| Protokol | Durum | Açıklama |
-|----------|-------|----------|
-| SSL 2.0 | ❌ Kapalı | Ciddi güvenlik açıkları |
-| SSL 3.0 | ❌ Kapalı | POODLE saldırısına açık |
-| TLS 1.0 | ❌ Kapalı | BEAST saldırısına açık |
-| TLS 1.1 | ❌ Kapalı | Zayıf cipher desteği |
-| TLS 1.2 | ✅ Açık | Güvenli (GCM ile) |
-| TLS 1.3 | ✅ Açık | En güvenli |
-
-### Cipher Suite'ler
-
-#### TLS 1.3 (3 cipher - değiştirilemez)
-```
-TLS_AES_256_GCM_SHA384
-TLS_CHACHA20_POLY1305_SHA256
-TLS_AES_128_GCM_SHA256
-```
-
-#### TLS 1.2 (6 cipher - sadece GCM)
-```
-TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384  ← En güvenli
-TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256
-TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384
-TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256
-TLS_RSA_WITH_AES_256_GCM_SHA384          ← Uyumluluk için
-TLS_RSA_WITH_AES_128_GCM_SHA256
-```
-
-### Devre Dışı Bırakılan Özellikler
-
-| Kategori | Devre Dışı |
-|----------|------------|
-| Cipher'lar | RC4, DES, 3DES, NULL |
-| Hash | MD5, SHA1 |
-| Mod | CBC (tüm cipher'lar) |
-| Key Exchange | RSA (sadece ECDHE/DHE önerilir) |
-
-### DH Key Size
-
-| Ayar | Değer |
-|------|-------|
-| ServerMinKeyBitLength | 3072 bit |
-| ClientMinKeyBitLength | 3072 bit |
-
----
-
-## ⚠️ Uyumluluk
-
-### Desteklenen Sistemler
-
-| Sistem | TLS 1.2 | TLS 1.3 |
-|--------|---------|---------|
-| Windows Server 2022+ | ✅ | ✅ |
-| Windows Server 2019 | ✅ | ❌ |
-| Windows Server 2016 | ✅ | ❌ |
-| Windows 11 | ✅ | ✅ |
-| Windows 10 (1903+) | ✅ | ✅ |
-
-### ❌ Uyumsuz İstemciler
-
-Bu yapılandırma aşağıdaki eski sistemlerle **çalışmaz**:
-
-| Sistem/Uygulama | Neden |
-|-----------------|-------|
-| Windows XP | TLS 1.2 desteği yok |
-| Windows Vista | TLS 1.2 varsayılan değil |
-| Internet Explorer 10 ve altı | Eski cipher desteği |
-| Android 4.3 ve altı | GCM desteği yok |
-| Java 7 ve altı | TLS 1.2 desteği sınırlı |
-| OpenSSL 0.9.8 | Eski sürüm |
-
-### 📌 Önemli Notlar
-
-1. **Yeniden Başlatma**: Değişikliklerin tam olarak uygulanması için sunucuyu yeniden başlatmanız gerekebilir.
-
-2. **Test Edin**: Üretim ortamına uygulamadan önce test ortamında deneyin.
-
-3. **Yedekleme**: Script otomatik yedek alır ancak manuel yedek de almanız önerilir.
-
-4. **Eski Uygulamalar**: Eski .NET uygulamaları için `-EnableStrongCrypto` parametresini kullanın.
-
----
-
-## 🔧 Sorun Giderme
-
-### Yaygın Sorunlar
-
-#### 1. "Erişim reddedildi" hatası
-```powershell
-# PowerShell'i Administrator olarak çalıştırın
-Start-Process powershell -Verb runAs
-```
-
-#### 2. TLS 1.3 etkinleştirilemiyor
-```powershell
-# Windows sürümünü kontrol edin
-[System.Environment]::OSVersion.Version
-# TLS 1.3 için: Windows Server 2022+ veya Windows 11+ gerekli
-```
-
-#### 3. Uygulama bağlantı hatası
-```powershell
-# .NET uygulamaları için Strong Crypto etkinleştirin
-.\TLSHardener.ps1 -EnableStrongCrypto
-```
-
-#### 4. Yedekten geri yükleme
-```powershell
-# backups/ klasöründeki .reg dosyasını çift tıklayın
-# veya
-reg import .\backups\Protocol_Script_YYYYMMDD_HHMMSS_SCHANNEL.reg
-```
-
-### Log Dosyaları
-
-Loglar `logs/` klasöründe tutulur:
-```
-logs/TLSHardener_2025_11_29_1430.log
-```
-
----
-
-## 📊 Compliance (Uyumluluk Standartları)
-
-Bu yapılandırma aşağıdaki standartlarla uyumludur:
-
-| Standart | Durum | Notlar |
-|----------|-------|--------|
-| PCI-DSS 4.0 | ✅ | TLS 1.2+ zorunlu |
-| NIST SP 800-52 Rev. 2 | ✅ | GCM cipher önerisi |
-| HIPAA | ✅ | Güçlü şifreleme |
-| GDPR | ✅ | Veri şifreleme |
-| CIS Benchmark | ✅ | Windows Server hardening |
-
----
-
-## 📂 Proje Yapısı
+## 📂 Project Structure / Proje Yapısı
 
 ```
 TLSHardener/
-├── TLSHardener.ps1           # Ana script
-├── TLSHardener-Verify.ps1    # Doğrulama scripti
-├── TLSHardener-Compliance.ps1 # Uyumluluk raporu scripti
-├── TLSHardener-Report.ps1    # Raporlama scripti
-├── TLSHardener-Clean.ps1     # Temizleme scripti
-├── README.md                 # Bu dosya
-├── CHANGELOG.md              # Versiyon geçmişi
-├── TODO.md                   # Yapılacaklar listesi
-├── config/                   # Profil yapılandırma dosyaları
-│   ├── strict.json           # Maksimum güvenlik (TLS 1.3 only)
-│   ├── recommended.json      # Önerilen (varsayılan)
-│   ├── compatible.json       # Legacy uyumluluk
-│   └── custom.json           # Kullanıcı özelleştirmesi
-├── assets/                   # Görseller
-├── backups/                  # Otomatik yedekler
-├── logs/                     # Log dosyaları
-└── reports/                  # Doğrulama ve uyumluluk raporları
+├── 📁 EN/                    # 🇬🇧 English scripts & docs
+│   ├── TLSHardener.ps1
+│   ├── TLSHardener-Verify.ps1
+│   ├── TLSHardener-Compliance.ps1
+│   ├── TLSHardener-Report.ps1
+│   ├── TLSHardener-Clean.ps1
+│   └── README.md
+├── 📁 TR/                    # 🇹🇷 Türkçe scriptler & dokümanlar
+│   ├── TLSHardener.ps1
+│   ├── TLSHardener-Verify.ps1
+│   ├── TLSHardener-Compliance.ps1
+│   ├── TLSHardener-Report.ps1
+│   ├── TLSHardener-Clean.ps1
+│   └── README.md
+├── 📁 config/                # Profile configurations (shared)
+│   ├── strict.json           # Maximum security (TLS 1.3 only)
+│   ├── recommended.json      # Balanced (default)
+│   ├── compatible.json       # Legacy support
+│   └── custom.json           # User customization
+├── 📁 assets/                # Icons & images
+├── 📄 README.md              # This file
+├── 📄 LICENSE                # MIT License
+├── 📄 CHANGELOG.md           # Version history
+├── 📄 CONTRIBUTING.md        # Contribution guide
+└── 📄 SECURITY.md            # Security policy
 ```
 
 ---
 
-## 🤝 Katkıda Bulunma
+## 📊 Compliance Standards / Uyumluluk Standartları
 
-1. Bu repository'yi fork edin
-2. Feature branch oluşturun (`git checkout -b feature/YeniOzellik`)
-3. Değişikliklerinizi commit edin (`git commit -m 'Yeni özellik eklendi'`)
-4. Branch'inizi push edin (`git push origin feature/YeniOzellik`)
-5. Pull Request açın
-
----
-
-## 📜 Lisans
-
-Bu proje MIT lisansı altında lisanslanmıştır. Detaylar için [LICENSE](LICENSE) dosyasına bakın.
+| Standard | Status | Description |
+|----------|:------:|-------------|
+| **PCI-DSS v4.0** | ✅ | Payment Card Industry Data Security |
+| **NIST SP 800-52** | ✅ | TLS Implementation Guidelines |
+| **HIPAA** | ✅ | Healthcare Security Requirements |
+| **CIS Benchmark** | ✅ | Windows Server Hardening |
+| **GDPR** | ✅ | Data Protection (Encryption) |
 
 ---
 
-## 📞 İletişim
+## 📜 License / Lisans
 
-- **Proje**: [GitHub Repository](https://github.com/kullanici/TLSHardener)
-- **Sorunlar**: [Issues](https://github.com/kullanici/TLSHardener/issues)
+This project is licensed under the **MIT License** - see [LICENSE](LICENSE) for details.
+
+Bu proje **MIT Lisansı** altında lisanslanmıştır - detaylar için [LICENSE](LICENSE) dosyasına bakın.
 
 ---
 
-## 🙏 Teşekkürler
+## 🤝 Contributing / Katkıda Bulunma
 
-- Microsoft TLS/SSL güvenlik dokümantasyonu
-- NIST kriptografik standartları
-- Açık kaynak topluluğu
+See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
+
+Katkı rehberi için [CONTRIBUTING.md](CONTRIBUTING.md) dosyasına bakın.
+
+---
+
+## 📞 Contact / İletişim
+
+- **GitHub**: [tazxtazxedu/TLSHardener](https://github.com/tazxtazxedu/TLSHardener)
+- **Issues**: [Report a bug / Hata bildir](https://github.com/tazxtazxedu/TLSHardener/issues)
 
 ---
 
 <div align="center">
 
-**⭐ Bu proje işinize yaradıysa yıldız vermeyi unutmayın! ⭐**
+**⭐ Star this repo if it helped you! / Yardımcı olduysa yıldız verin! ⭐**
+
+Made with ❤️ for Windows Server Security
 
 </div>

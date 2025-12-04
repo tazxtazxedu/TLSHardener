@@ -1,86 +1,89 @@
-﻿# 🤝 Katkıda Bulunma Rehberi
+﻿# 🤝 Contributing Guide
 
-TLSHardener projesine katkıda bulunmak istediğiniz için teşekkürler! Bu rehber, projeye nasıl katkıda bulunabileceğinizi açıklar.
+Thank you for your interest in contributing to TLSHardener! This guide explains how you can contribute to the project.
 
-## 📋 İçindekiler
+## 📋 Table of Contents
 
-- [Davranış Kuralları](#davranış-kuralları)
-- [Nasıl Katkıda Bulunabilirim?](#nasıl-katkıda-bulunabilirim)
-- [Geliştirme Ortamı](#geliştirme-ortamı)
-- [Kod Standartları](#kod-standartları)
-- [Pull Request Süreci](#pull-request-süreci)
-
----
-
-## 📜 Davranış Kuralları
-
-Bu proje, saygılı ve kapsayıcı bir ortam sağlamayı amaçlar. Lütfen:
-
-- Yapıcı eleştiri yapın
-- Farklı görüşlere saygı gösterin
-- Topluluk üyelerine karşı nazik olun
-- Profesyonel bir dil kullanın
+- [Code of Conduct](#code-of-conduct)
+- [How Can I Contribute?](#how-can-i-contribute)
+- [Development Environment](#development-environment)
+- [Code Standards](#code-standards)
+- [Pull Request Process](#pull-request-process)
 
 ---
 
-## 🚀 Nasıl Katkıda Bulunabilirim?
+## 📜 Code of Conduct
 
-### 🐛 Hata Bildirimi
+This project aims to provide a respectful and inclusive environment. Please:
 
-1. [Issues](https://github.com/kullanici/TLSHardener/issues) sayfasını kontrol edin
-2. Aynı hata daha önce bildirilmemişse yeni bir issue açın
-3. Şu bilgileri ekleyin:
-   - Windows ve PowerShell sürümü
-   - Adım adım tekrarlama yöntemi
-   - Beklenen ve gerçekleşen davranış
-   - Hata mesajları ve log çıktıları
-
-### 💡 Özellik Önerisi
-
-1. [Issues](https://github.com/kullanici/TLSHardener/issues) sayfasında "Feature Request" açın
-2. Özelliğin amacını ve kullanım senaryosunu açıklayın
-3. Mümkünse örnek kod veya tasarım ekleyin
-
-### 🔧 Kod Katkısı
-
-1. Repository'yi fork edin
-2. Feature branch oluşturun: `git checkout -b feature/YeniOzellik`
-3. Değişikliklerinizi yapın
-4. Testlerinizi çalıştırın
-5. Commit edin: `git commit -m 'Yeni özellik: Açıklama'`
-6. Push edin: `git push origin feature/YeniOzellik`
-7. Pull Request açın
+- Provide constructive criticism
+- Respect different opinions
+- Be kind to community members
+- Use professional language
 
 ---
 
-## 🛠️ Geliştirme Ortamı
+## 🚀 How Can I Contribute?
 
-### Gereksinimler
+### 🐛 Bug Reports
 
-- Windows 10/11 veya Windows Server 2016+
-- PowerShell 5.1 veya PowerShell 7+
-- VS Code (önerilen) + PowerShell extension
+1. Check the [Issues](https://github.com/tazxtazxedu/TLSHardener/issues) page
+2. If the same bug hasn't been reported, open a new issue
+3. Include the following information:
+   - Windows and PowerShell version
+   - Step-by-step reproduction method
+   - Expected vs actual behavior
+   - Error messages and log outputs
+
+### 💡 Feature Requests
+
+1. Open a "Feature Request" on the [Issues](https://github.com/tazxtazxedu/TLSHardener/issues) page
+2. Explain the purpose and use case of the feature
+3. If possible, add example code or design
+
+### 🔧 Code Contributions
+
+1. Fork the repository
+2. Create a feature branch: `git checkout -b feature/NewFeature`
+3. Make your changes
+4. Run your tests
+5. Commit: `git commit -m 'New feature: Description'`
+6. Push: `git push origin feature/NewFeature`
+7. Open a Pull Request
+
+---
+
+## 🛠️ Development Environment
+
+### Requirements
+
+- Windows 10/11 or Windows Server 2016+
+- PowerShell 5.1 or PowerShell 7+
+- VS Code (recommended) + PowerShell extension
 - Git
 
-### Kurulum
+### Setup
 
 ```powershell
-# Repository'yi klonlayın
-git clone https://github.com/KULLANICI/TLSHardener.git
+# Clone the repository
+git clone https://github.com/tazxtazxedu/TLSHardener.git
 cd TLSHardener
 
-# Test modunda çalıştırın
-.\TLSHardener.ps1 -WhatIf
+# Run in test mode (English version)
+.\EN\TLSHardener.ps1 -WhatIf
+
+# Run in test mode (Turkish version)
+.\TR\TLSHardener.ps1 -WhatIf
 ```
 
 ---
 
-## 📝 Kod Standartları
+## 📝 Code Standards
 
-### PowerShell Kuralları
+### PowerShell Rules
 
 ```powershell
-# ✅ Doğru: Açıklayıcı fonksiyon isimleri
+# ✅ Correct: Descriptive function names
 function Set-TlsProtocol {
     param(
         [Parameter(Mandatory)]
@@ -90,77 +93,77 @@ function Set-TlsProtocol {
     )
 }
 
-# ❌ Yanlış: Kısa ve belirsiz isimler
+# ❌ Wrong: Short and ambiguous names
 function SetTls { }
 ```
 
-### Yorum Standartları
+### Comment Standards
 
 ```powershell
-# Fonksiyonlar için Synopsis kullanın
+# Use Synopsis for functions
 <#
 .SYNOPSIS
-    Protokol yapılandırmasını ayarlar.
+    Sets protocol configuration.
 
 .DESCRIPTION
-    TLS/SSL protokollerini etkinleştirir veya devre dışı bırakır.
+    Enables or disables TLS/SSL protocols.
 
 .PARAMETER Protocol
-    Yapılandırılacak protokol adı.
+    Name of the protocol to configure.
 
 .EXAMPLE
     Set-TlsProtocol -Protocol "TLS 1.2" -Enabled $true
 #>
 ```
 
-### Loglama
+### Logging
 
 ```powershell
-# Tüm önemli işlemler loglanmalı
-Write-Log "İşlem başladı" -LogType Info
-Write-Log "Hata oluştu: $_" -LogType Error
+# All important operations should be logged
+Write-Log "Operation started" -LogType Info
+Write-Log "Error occurred: $_" -LogType Error
 ```
 
 ---
 
-## 🔄 Pull Request Süreci
+## 🔄 Pull Request Process
 
-### PR Açmadan Önce
+### Before Opening a PR
 
-- [ ] Kod çalışıyor mu?
-- [ ] `.\TLSHardener.ps1 -WhatIf` başarılı mı?
-- [ ] Yeni özellik için dokümantasyon eklendi mi?
-- [ ] CHANGELOG.md güncellendi mi?
+- [ ] Does the code work?
+- [ ] Is `.\EN\TLSHardener.ps1 -WhatIf` successful?
+- [ ] Is documentation added for new features?
+- [ ] Is CHANGELOG.md updated?
 
-### PR Açıklaması
+### PR Description Template
 
 ```markdown
-## Açıklama
-Bu PR şunları ekler/düzeltir:
+## Description
+This PR adds/fixes:
 - ...
 
-## Test
-- [ ] Windows Server 2019'da test edildi
-- [ ] Windows Server 2022'de test edildi
-- [ ] Dry-Run modu test edildi
+## Testing
+- [ ] Tested on Windows Server 2019
+- [ ] Tested on Windows Server 2022
+- [ ] Dry-Run mode tested
 
-## İlgili Issue
+## Related Issue
 Fixes #123
 ```
 
-### Review Süreci
+### Review Process
 
-1. En az 1 reviewer onayı gerekli
-2. Tüm CI testleri geçmeli
-3. Merge conflict olmamalı
-
----
-
-## 📞 Sorularınız mı var?
-
-- [Discussions](https://github.com/kullanici/TLSHardener/discussions) sayfasında sorun
-- Mevcut [Issues](https://github.com/kullanici/TLSHardener/issues) kontrol edin
+1. At least 1 reviewer approval required
+2. All CI tests must pass
+3. No merge conflicts
 
 ---
 
-Katkılarınız için teşekkürler! 🙏
+## 📞 Questions?
+
+- Ask on [Discussions](https://github.com/tazxtazxedu/TLSHardener/discussions)
+- Check existing [Issues](https://github.com/tazxtazxedu/TLSHardener/issues)
+
+---
+
+Thank you for your contributions! 🙏
