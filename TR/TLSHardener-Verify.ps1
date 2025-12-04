@@ -62,7 +62,8 @@ param (
     [switch]$ExportReport,
     [string]$ReportPath = ".\reports\TLSHardener-Verify_$(Get-Date -Format 'yyyy-MM-dd_HHmm').html",
     [ValidateSet("strict", "recommended", "compatible", "custom")]
-    [string]$Profile = "recommended"
+    [Alias("Profile")]
+    [string]$SecurityProfile = "recommended"
 )
 
 # Konsol kodlamasını UTF-8 olarak ayarla
@@ -73,7 +74,7 @@ $script:ActiveProfile = $null
 $script:ProfileName = "Varsayılan"
 
 # Profil yükleme fonksiyonu
-function Load-VerifyProfile {
+function Import-VerifyProfile {
     param ([string]$ProfileName)
     
     $profilePath = ".\config\$ProfileName.json"
@@ -583,8 +584,7 @@ function Test-CipherSuites {
     
     $suiteArray = $currentSuites -split ','
     
-    # Profilden beklenen cipher'ları al
-    $expectedSuites = Get-ExpectedCipherSuites
+    # Profilden CBC izni al
     $allowCBC = Get-AllowCBC
     
     # Güvensiz cipher'lar (olmaması gereken) - CBC kontrolü profile göre değişir
@@ -828,10 +828,9 @@ function Export-HtmlReport {
                     <th>Durum</th>
                 </tr>
             </thead>
-            <tbody>
+            </tbody>
 "@
 
-    $currentCategory = ""
     foreach ($result in $script:ResultList) {
         $statusClass = "status-$($result.Status.ToLower())"
         $statusText = switch ($result.Status) {
@@ -885,7 +884,7 @@ function Invoke-Verification {
     Write-Host "  Bilgisayar: $env:COMPUTERNAME" -ForegroundColor Gray
     
     # Profil yükleme (varsayılan: recommended)
-    if (Load-VerifyProfile -ProfileName $Profile) {
+    if (Import-VerifyProfile -ProfileName $SecurityProfile) {
         Write-Host "`n" -NoNewline
         Write-Host "╔════════════════════════════════════════════════════════════════════╗" -ForegroundColor Cyan
         Write-Host "║                        PROFİL BİLGİSİ                               ║" -ForegroundColor Cyan

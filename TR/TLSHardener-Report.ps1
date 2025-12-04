@@ -182,7 +182,7 @@ foreach ($category in $registryPaths.Keys) {
         elseif ($category -eq "StrongCrypto" -and ($schUseStrongCrypto -or $systemDefaultTlsVersions)) {
             $status = "SchUseStrongCrypto: $($schUseStrongCrypto.SchUseStrongCrypto), SystemDefaultTlsVersions: $($systemDefaultTlsVersions.SystemDefaultTlsVersions)"
         }
-        elseif ($enabled -ne $null) {
+        elseif ($null -ne $enabled) {
             $status = "Enabled: $($enabled.Enabled)"
         }
         else {
@@ -195,10 +195,6 @@ foreach ($category in $registryPaths.Keys) {
         }
     }
 }
-
-# HTML Rapor Üretimi
-$scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
-$iconsDir = Join-Path $scriptDir "assets"
 
 # İstatistik hesaplama
 $stats = @{

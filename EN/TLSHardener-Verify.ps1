@@ -62,7 +62,8 @@ param (
     [switch]$ExportReport,
     [string]$ReportPath = ".\reports\TLSHardener-Verify_$(Get-Date -Format 'yyyy-MM-dd_HHmm').html",
     [ValidateSet("strict", "recommended", "compatible", "custom")]
-    [string]$Profile = "recommended"
+    [Alias("Profile")]
+    [string]$SecurityProfile = "recommended"
 )
 
 # Set console encoding to UTF-8
@@ -73,7 +74,7 @@ $script:ActiveProfile = $null
 $script:ProfileName = "Default"
 
 # Profile loading function
-function Load-VerifyProfile {
+function Import-VerifyProfile {
     param ([string]$ProfileName)
     
     $profilePath = ".\config\$ProfileName.json"
@@ -583,8 +584,7 @@ function Test-CipherSuites {
     
     $suiteArray = $currentSuites -split ','
     
-    # Get expected ciphers from profile
-    $expectedSuites = Get-ExpectedCipherSuites
+    # Get CBC permission from profile
     $allowCBC = Get-AllowCBC
     
     # Unsafe ciphers (should not exist) - CBC check varies by profile
@@ -828,10 +828,9 @@ function Export-HtmlReport {
                     <th>Status</th>
                 </tr>
             </thead>
-            <tbody>
+            </tbody>
 "@
 
-    $currentCategory = ""
     foreach ($result in $script:ResultList) {
         $statusClass = "status-$($result.Status.ToLower())"
         $statusText = switch ($result.Status) {
@@ -885,7 +884,7 @@ function Invoke-Verification {
     Write-Host "  Computer: $env:COMPUTERNAME" -ForegroundColor Gray
     
     # Load profile (default: recommended)
-    if (Load-VerifyProfile -ProfileName $Profile) {
+    if (Import-VerifyProfile -ProfileName $SecurityProfile) {
         Write-Host "`n" -NoNewline
         Write-Host "╔════════════════════════════════════════════════════════════════════╗" -ForegroundColor Cyan
         Write-Host "║                        PROFILE INFORMATION                          ║" -ForegroundColor Cyan

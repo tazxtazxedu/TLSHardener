@@ -107,7 +107,8 @@ param (
     [string]$BackupFile = "",
     [switch]$ToDefaults,
     [ValidateSet("strict", "recommended", "compatible", "custom")]
-    [string]$Profile = "recommended",
+    [Alias("Profile")]
+    [string]$SecurityProfile = "recommended",
     [string[]]$ComputerName,
     [System.Management.Automation.PSCredential]$Credential
 )
@@ -320,7 +321,7 @@ function Invoke-RemoteConfiguration {
         
         try {
             # Parse profile
-            $profile = $ProfileJson | ConvertFrom-Json
+            $profileData = $ProfileJson | ConvertFrom-Json
             
             $results.Messages += "Profile loaded: $ProfileName"
             
@@ -336,7 +337,7 @@ function Invoke-RemoteConfiguration {
                 $timestamp = Get-Date -Format "yyyyMMdd_HHmmss"
                 $backupFile = Join-Path $backupFolder "SCHANNEL_$timestamp.reg"
                 
-                $regExport = reg export "HKLM\SYSTEM\CurrentControlSet\Control\SecurityProviders\SCHANNEL" $backupFile /y 2>&1
+                $null = reg export "HKLM\SYSTEM\CurrentControlSet\Control\SecurityProviders\SCHANNEL" $backupFile /y 2>&1
                 if ($LASTEXITCODE -eq 0) {
                     $results.Messages += "Backup created: $backupFile"
                 } else {
@@ -348,10 +349,10 @@ function Invoke-RemoteConfiguration {
             $protocols = @(
                 @{ Name = "SSL 2.0"; Enabled = $false },
                 @{ Name = "SSL 3.0"; Enabled = $false },
-                @{ Name = "TLS 1.0"; Enabled = $profile.protocols.tls10 },
-                @{ Name = "TLS 1.1"; Enabled = $profile.protocols.tls11 },
-                @{ Name = "TLS 1.2"; Enabled = $profile.protocols.tls12 },
-                @{ Name = "TLS 1.3"; Enabled = $profile.protocols.tls13 }
+                @{ Name = "TLS 1.0"; Enabled = $profileData.protocols.tls10 },
+                @{ Name = "TLS 1.1"; Enabled = $profileData.protocols.tls11 },
+                @{ Name = "TLS 1.2"; Enabled = $profileData.protocols.tls12 },
+                @{ Name = "TLS 1.3"; Enabled = $profileData.protocols.tls13 }
             )
             
             foreach ($proto in $protocols) {
@@ -425,7 +426,7 @@ function Invoke-RemoteConfiguration {
             }
             
             # Key Exchange - DH Key Size
-            $dhKeySize = $profile.keyExchange.dhMinKeySize
+            $dhKeySize = $profileData.keyExchange.dhMinKeySize
             $dhRegPath = "HKLM:\SYSTEM\CurrentControlSet\Control\SecurityProviders\SCHANNEL\KeyExchangeAlgorithms\Diffie-Hellman"
             
             if (-not $DryRun) {
@@ -441,11 +442,11 @@ function Invoke-RemoteConfiguration {
             $cipherSuitesPath = "HKLM:\SOFTWARE\Policies\Microsoft\Cryptography\Configuration\SSL\00010002"
             $allCiphers = @()
             
-            if ($profile.cipherSuites.tls13 -and $profile.cipherSuites.tls13.Count -gt 0) {
-                $allCiphers += $profile.cipherSuites.tls13
+            if ($profileData.cipherSuites.tls13 -and $profileData.cipherSuites.tls13.Count -gt 0) {
+                $allCiphers += $profileData.cipherSuites.tls13
             }
-            if ($profile.cipherSuites.tls12 -and $profile.cipherSuites.tls12.Count -gt 0) {
-                $allCiphers += $profile.cipherSuites.tls12
+            if ($profileData.cipherSuites.tls12 -and $profileData.cipherSuites.tls12.Count -gt 0) {
+                $allCiphers += $profileData.cipherSuites.tls12
             }
             
             if ($allCiphers.Count -gt 0 -and -not $DryRun) {
@@ -928,7 +929,7 @@ function Write-DryRunAction {
 }
 
 # Profile loading function
-function Load-SecurityProfile {
+function Import-SecurityProfile {
     param (
         [string]$ProfileName
     )
@@ -1284,14 +1285,15 @@ function Set-KeyExchangeAlgorithms {
     
     # Get key exchange configuration from profile
     $keyExchangeAlgorithms = @{}
-    $dhMinKeyBitLength = 3072
+    $script:dhMinKeyBitLength = 3072
     $script:ActiveProfile.keyExchange.PSObject.Properties | ForEach-Object {
         if ($_.Name -eq 'DH-MinKeyBitLength') {
-            $dhMinKeyBitLength = $_.Value
+            $script:dhMinKeyBitLength = $_.Value
         } else {
             $keyExchangeAlgorithms[$_.Name] = $_.Value
         }
     }
+    $dhMinKeyBitLength = $script:dhMinKeyBitLength
 
     $regPath = "HKLM:\SYSTEM\CurrentControlSet\Control\SecurityProviders\SCHANNEL\KeyExchangeAlgorithms"
     $hasError = $false
@@ -1519,7 +1521,7 @@ function Invoke-SecurityConfiguration {
     # Clear-Host
     
     # Load profile (default: recommended)
-    Load-SecurityProfile -ProfileName $Profile
+    Import-SecurityProfile -ProfileName $SecurityProfile
     
     # Dry-Run mode start message
     if ($script:DryRun) {
