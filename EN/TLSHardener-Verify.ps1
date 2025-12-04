@@ -55,7 +55,7 @@ Verifies against custom profile settings
     - PowerShell 5.1+
 
 .LINK
-    https://github.com/username/TLSHardener
+    https://github.com/tazxtazxedu/TLSHardener
 #>
 
 param (

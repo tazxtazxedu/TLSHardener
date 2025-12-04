@@ -49,7 +49,7 @@
     - Windows Server 2016+ or Windows 10+
 
 .LINK
-    https://github.com/username/TLSHardener
+    https://github.com/tazxtazxedu/TLSHardener
 
 .LINK
     .\TLSHardener.ps1 -Rollback -ToDefaults

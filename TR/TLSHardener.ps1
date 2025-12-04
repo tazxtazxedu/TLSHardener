@@ -96,7 +96,7 @@ Belirtilen kimlik bilgileri ile uzak sunucuda çalıştırır
     - TLS 1.3 için: Windows Server 2022+ / Windows 11+
 
 .LINK
-    https://github.com/kullanici/TLSHardener
+    https://github.com/tazxtazxedu/TLSHardener
 #>
 #Confirmation gerektiren işlemleri atlamak için scripte parametre ekler
 param (

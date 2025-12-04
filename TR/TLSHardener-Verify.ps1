@@ -55,7 +55,7 @@ Custom profil ayarlarına göre doğrulama yapar
     - PowerShell 5.1+
 
 .LINK
-    https://github.com/kullanici/TLSHardener
+    https://github.com/tazxtazxedu/TLSHardener
 #>
 
 param (

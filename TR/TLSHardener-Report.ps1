@@ -53,7 +53,7 @@
     - Administrator yetkisi (registry okuma için)
 
 .LINK
-    https://github.com/kullanici/TLSHardener
+    https://github.com/tazxtazxedu/TLSHardener
 
 .LINK
     .\TLSHardener.ps1

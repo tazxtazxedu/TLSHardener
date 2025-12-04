@@ -645,8 +645,8 @@ Bu proje MIT lisansı altında lisanslanmıştır. Detaylar için [LICENSE](LICE
 
 ## 📞 İletişim
 
-- **Proje**: [GitHub Repository](https://github.com/kullanici/TLSHardener)
-- **Sorunlar**: [Issues](https://github.com/kullanici/TLSHardener/issues)
+- **Proje**: [GitHub Repository](https://github.com/tazxtazxedu/TLSHardener)
+- **Sorunlar**: [Issues](https://github.com/tazxtazxedu/TLSHardener/issues)
 
 ---
 

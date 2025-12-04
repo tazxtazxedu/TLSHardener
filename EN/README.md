@@ -641,8 +641,8 @@ This project is licensed under the MIT License. See the [LICENSE](LICENSE) file 
 
 ## 📞 Contact
 
-- **Project**: [GitHub Repository](https://github.com/user/TLSHardener)
-- **Issues**: [Issues](https://github.com/user/TLSHardener/issues)
+- **Project**: [GitHub Repository](https://github.com/tazxtazxedu/TLSHardener)
+- **Issues**: [Issues](https://github.com/tazxtazxedu/TLSHardener/issues)
 
 ---
 

@@ -52,7 +52,7 @@ HTML rapor oluşturur ve tarayıcıda açar
     - CIS Benchmark (Windows Hardening)
 
 .LINK
-    https://github.com/kullanici/TLSHardener
+    https://github.com/tazxtazxedu/TLSHardener
 #>
 
 param (

@@ -52,7 +52,7 @@ Creates an HTML report and opens it in browser
     - CIS Benchmark (Windows Hardening)
 
 .LINK
-    https://github.com/user/TLSHardener
+    https://github.com/tazxtazxedu/TLSHardener
 #>
 
 param (
