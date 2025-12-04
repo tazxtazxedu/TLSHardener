@@ -213,6 +213,23 @@ Rollback işlemi sırasında:
 
 ### 🌐 Uzak Sunucu Desteği
 
+#### Ön Gereksinimler
+
+Uzak sunucu desteği için PowerShell Remoting (WinRM) gereklidir. Önce hedef sunucularda aşağıdaki ayarları yapın:
+
+```powershell
+# Hedef sunucularda WinRM'i etkinleştirin
+Enable-PSRemoting -Force
+
+# Güvenlik duvarı kuralını kontrol edin
+Get-NetFirewallRule -Name "WINRM-HTTP-In-TCP" | Enable-NetFirewallRule
+
+# Trusted Hosts ekleyin (gerekirse)
+Set-Item WSMan:\localhost\Client\TrustedHosts -Value "Server01,Server02"
+```
+
+#### Kullanım
+
 Birden fazla sunucuyu tek komutla yapılandırın:
 
 ```powershell
@@ -230,21 +247,6 @@ Birden fazla sunucuyu tek komutla yapılandırın:
 
 # Strong Crypto ile
 .\TLSHardener.ps1 -ComputerName "Server01" -EnableStrongCrypto -BypassConfirmation
-```
-
-#### Ön Gereksinimler
-
-Uzak sunucu desteği için PowerShell Remoting (WinRM) gereklidir:
-
-```powershell
-# Hedef sunucularda WinRM'i etkinleştirin
-Enable-PSRemoting -Force
-
-# Güvenlik duvarı kuralını kontrol edin
-Get-NetFirewallRule -Name "WINRM-HTTP-In-TCP" | Enable-NetFirewallRule
-
-# Trusted Hosts ekleyin (gerekirse)
-Set-Item WSMan:\localhost\Client\TrustedHosts -Value "Server01,Server02"
 ```
 
 #### Çıktı
